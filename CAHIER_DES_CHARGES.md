@@ -1,0 +1,178 @@
+# Suivi Films & Séries — Cahier des charges V1
+
+> Fichier de référence pour la réalisation dans Claude Code.
+> Dépôt : https://github.com/Alticoco/Suivi-Films-Series (public, sans licence).
+
+## 1. Le projet en deux phrases
+
+Site perso, pour un seul utilisateur et un usage non commercial, qui tourne **en local sur mon PC Windows** et me sert à suivre les films, séries et animés que je regarde. Mon historique de visionnages m'appartient : il est stocké chez moi, exportable, et ne dépend d'aucun service externe. TMDB ne sert qu'à « habiller » les fiches (affiches, synopsis, dates).
+
+## 2. Consignes de travail pour Claude Code
+
+- Je suis débutant : **explique simplement** ce que tu fais et pourquoi, sans jargon inutile. Commentaires du code en français.
+- Interface **entièrement en français**.
+- Avance **étape par étape** (section 10). À la fin de chaque étape : je dois pouvoir tester dans mon navigateur, puis tu fais un commit avec un message clair.
+- Ne jamais publier sur GitHub : la clé/le jeton TMDB, le dossier de données de PocketBase, les exports. Mets en place le `.gitignore` dès la première étape.
+- Pas de dépendance inutile. Si une bibliothèque est nécessaire, copie-la dans le projet (pas de chargement depuis un CDN) pour que le site marche hors ligne.
+- Le design doit être **facile à retoucher** : toutes les couleurs, polices et espacements dans des variables CSS regroupées en haut d'un seul fichier.
+- Pose-moi une question avant tout choix important qui n'est pas tranché ici.
+
+## 3. Choix techniques
+
+| Sujet | Choix |
+|---|---|
+| Base de données + serveur | **PocketBase** (un seul exécutable, contient SQLite, interface d'admin incluse) |
+| Interface | **HTML / CSS / JavaScript simple**, sans framework ni étape de compilation, servie par PocketBase (`pb_public/`) |
+| Logique serveur | Hooks JavaScript de PocketBase (`pb_hooks/`) |
+| Accès | Serveur lié à `127.0.0.1` uniquement (invisible depuis le réseau), port 8090 |
+| Démarrage | **Automatique avec Windows**, en arrière-plan, sans fenêtre. J'ouvre simplement un favori `http://127.0.0.1:8090` |
+| Comptes | Aucun. Un compte administrateur PocketBase créé une fois pour l'interface d'admin, c'est tout |
+| Clé TMDB | Dans un fichier local non versionné, lue par le serveur. **Jamais envoyée au navigateur** : le navigateur passe par les routes du serveur |
+| Export / import Excel | Bibliothèque type SheetJS, copiée localement |
+
+## 4. Séparation des données
+
+Deux mondes strictement séparés :
+
+1. **Mes données** (définitives, jamais supprimées automatiquement) : quels titres j'ai ajoutés, leur type, statut, mes visionnages et leurs dates, mes notes et commentaires.
+2. **L'habillage TMDB** (cache jetable) : synopsis, affiches, durées, listes d'épisodes, notes TMDB. Peut être vidé à tout moment sans rien perdre ; il se reconstruit tout seul.
+
+### Source remplaçable
+
+Toute communication avec TMDB passe par **un seul module** (ex. `pb_hooks/source/`) qui expose quelques fonctions neutres :
+
+- `rechercher(texte)` → liste de résultats (films + séries)
+- `details(type, idSource)` → infos d'un titre
+- `saisons(idSource)` / `episodes(idSource, saison)` → structure d'une série
+
+Le reste du code ne connaît pas TMDB. Plus tard, on pourra ajouter TVmaze, AniList ou Wikidata en écrivant un nouveau module, sans toucher à l'historique. Chaque titre garde la trace de sa source sous la forme `source` + `id_source` (ex. `tmdb` / `1399`).
+
+## 5. Modèle de données (collections PocketBase)
+
+### `titres` — mes titres
+
+| Champ | Type | Remarques |
+|---|---|---|
+| `source` | texte | `tmdb` ou `manuel` |
+| `id_source` | texte | vide si manuel |
+| `type` | choix | `film`, `serie`, `anime` |
+| `titre` | texte | titre français au moment de l'ajout (sert de repère dans l'export) |
+| `annee` | nombre | année de sortie |
+| `statut` | choix | `a_voir`, `en_cours`, `termine`, `en_pause`, `abandonne` |
+| `vu_avant` | booléen | « vu avant la création du site », sans date |
+| `note_serie` | nombre 0–10 | séries/animés uniquement, facultatif |
+| `notes` | texte long | mes notes libres sur le titre |
+| `duree_min` | nombre | uniquement pour les titres manuels (pour les stats) |
+| `image_perso` | fichier | facultatif, surtout pour les titres manuels |
+
+### `visionnages` — chaque visionnage
+
+| Champ | Type | Remarques |
+|---|---|---|
+| `titre` | relation → `titres` | |
+| `date` | date | date du jour par défaut, modifiable |
+| `saison` | nombre | vide pour un film |
+| `episode` | nombre | vide pour un film |
+| `note` | nombre 0–10 | films uniquement, facultatif |
+| `commentaire` | texte | films uniquement, facultatif |
+
+- **Film** : une ligne par visionnage. Revoir un film = une nouvelle ligne avec une nouvelle date (historique des revisionnages, temps écoulé entre deux visionnages affiché sur la fiche).
+- **Série / animé** : une ligne par épisode coché. « Toute la saison » crée une ligne par épisode, avec la même date.
+- V1 : un épisode ne peut être coché qu'une fois (pas de revisionnage de série).
+
+### `cache_source` — habillage TMDB
+
+`source`, `id_source`, `type_donnee` (détails, saison…), `donnees` (JSON), `recupere_le` (date).
+
+### `reglages`
+
+Un seul enregistrement : `dernier_export` (date).
+
+## 6. Règles métier
+
+### Statuts
+
+- Ajout depuis la recherche : statut `a_voir` par défaut, ou « Vu » directement.
+- **Film** : un visionnage ajouté → `termine`.
+- **Série** : premier épisode coché → `en_cours`. Tous les épisodes déjà diffusés cochés → `termine`. Si une nouvelle saison sort, la série repasse `en_cours`.
+- `en_pause` et `abandonne` se choisissent à la main. Cocher un nouvel épisode remet la série en `en_cours`.
+- **Vu avant** : marqueur sans date. Le titre compte comme vu (statut `termine`). Si je le revois plus tard, j'ajoute un visionnage daté normalement.
+
+### Bouton « Vu » (films)
+
+Ouvre une petite fenêtre : date (aujourd'hui par défaut), note /10 (facultative), commentaire (facultatif), et une case « Vu avant, date inconnue ». Validation possible sans rien remplir.
+
+### Type animé
+
+Choisi au moment de l'ajout. Pré-sélectionné automatiquement si le titre TMDB est de genre Animation et d'origine japonaise ; je peux corriger.
+
+## 7. Écrans
+
+En-tête commun : navigation + barre de recherche. Pied de page : logo et mention TMDB.
+
+1. **Tableau de bord** (accueil)
+   - Dernier film vu, dernière série vue.
+   - Séries en cours avec accès rapide « cocher l'épisode suivant ».
+   - Bandeau de rappel de sauvegarde (voir §8).
+   - Mini-stats : temps total passé en visionnage, nombre de titres vus cette année.
+2. **Catalogue** — recherche dans TMDB (films et séries), résultats en affiches. Sur chaque résultat : « Ajouter à voir », « Vu », et un indicateur s'il est déjà dans ma bibliothèque. Bouton **« Ajouter un titre manuellement »**.
+3. **Ma bibliothèque** — grille d'affiches de mes titres.
+   - Filtres : type (film / série / animé), statut, vu / pas vu.
+   - Tris : ma note, note TMDB, dernier visionnage, date d'ajout, titre, année.
+4. **Fiche titre** — affiche, titre, année, synopsis, durée, note TMDB, statut (modifiable), notes libres.
+   - Film : liste de mes visionnages (date, note, commentaire), temps écoulé entre deux visionnages, bouton « Vu ».
+   - Série : saisons dépliables avec cases à cocher par épisode et bouton « toute la saison », progression (ex. S2E5), note de la série.
+   - Possibilité de remplacer l'image, de supprimer le titre (avec confirmation).
+5. **Journal** — tous mes visionnages par ordre chronologique inverse, regroupés par mois.
+6. **Statistiques** (simple) — temps total passé (films + épisodes), nombre de films / séries / animés vus, visionnages par année.
+7. **Sauvegarde** — export, import, date du dernier export.
+
+## 8. Sauvegarde : export et import
+
+### Export Excel (.xlsx), lisible par un humain
+
+- **Feuille « Historique »** : une ligne par visionnage — Titre, Année, Type, Date (jj/mm/aaaa), Saison, Épisode, Note, Commentaire, Statut actuel du titre.
+- **Feuille « Mes titres »** : une ligne par titre — Titre, Année, Type, Statut, Vu avant, Note série, Notes.
+- Les titres « vu avant » apparaissent dans l'historique avec « Vu avant » à la place de la date.
+- Une seule colonne technique, **en dernier** : `Identifiant` (ex. `tmdb:1399` ou `manuel:xxxx`), indispensable pour l'import.
+- Nom du fichier : `suivi-films-series_AAAA-MM-JJ.xlsx`.
+
+### Import
+
+- Lit un fichier exporté par l'appli et reconstruit tous mes titres et visionnages ; l'habillage TMDB se recharge tout seul.
+- Avant d'importer : aperçu (« X titres, Y visionnages ») et choix entre **remplacer tout** ou **fusionner** (sans créer de doublons).
+
+### Rappel
+
+Bandeau sur le tableau de bord si le dernier export date de **plus de 30 jours** (ou si aucun export n'a jamais été fait), avec un bouton « Exporter maintenant ».
+
+## 9. Conditions TMDB à respecter
+
+- Langue `fr-FR` : titres français, synopsis français avec **repli sur l'anglais** si vide, **affiches françaises en priorité** (puis sans texte, puis anglaises), **date de sortie en France** quand elle existe.
+- Affiches chargées **directement depuis les serveurs d'images de TMDB**, en taille adaptée (petite pour la grille, moyenne pour la fiche) et en chargement différé. Elles ne sont pas stockées chez moi.
+- Cache : données rafraîchies quand elles ont plus de 30 jours ; une tâche quotidienne supprime tout ce qui a plus de 6 mois. Bouton « Vider le cache TMDB » dans la page Sauvegarde (utile si la licence était coupée).
+- Logo TMDB + mention en pied de page : « This product uses the TMDB API but is not endorsed or certified by TMDB. »
+- Aucune fonction d'IA utilisant les données TMDB.
+
+## 10. Ordre de réalisation
+
+Chaque étape se termine par un test de ma part et un commit.
+
+1. **Installation** — structure du projet, `.gitignore`, PocketBase, fichier local pour le jeton TMDB, démarrage automatique et invisible avec Windows, page d'accueil « ça marche ».
+2. **Données** — création des collections et du module source TMDB (recherche, détails, saisons, cache).
+3. **Catalogue** — recherche et ajout d'un titre (à voir / vu), ajout manuel.
+4. **Fiche film** — bouton « Vu » avec date, note, commentaire, vu avant ; historique des visionnages.
+5. **Fiche série** — épisodes à cocher, « toute la saison », progression, statuts automatiques.
+6. **Ma bibliothèque** — grille, filtres, tris.
+7. **Tableau de bord et statistiques**.
+8. **Journal**.
+9. **Sauvegarde** — export, import, rappel, vider le cache.
+10. **Finitions visuelles** — je fournirai des captures de sites dont j'aime le style.
+
+## 11. Hors V1 (versions suivantes)
+
+- **V1.1** : notes IMDb, Rotten Tomatoes et Metacritic via OMDb (clé gratuite, données en cache).
+- Listes « à voir une fois dans sa vie » (meilleurs films, meilleures séries).
+- Revisionnage complet d'une série.
+- Sources alternatives : TVmaze, AniList, Wikidata.
+- Accès depuis le téléphone.
