@@ -468,5 +468,45 @@ function construirePied() {
 
 // Icône de l'onglet (la même sur toutes les pages)
 document.head.append(el("link", { rel: "icon", type: "image/svg+xml", href: "img/favicon.svg" }));
-document.body.prepend(construireEntete());
+const entete = construireEntete();
+document.body.prepend(entete);
 document.body.append(construirePied());
+
+// ---------- En-tête qui se masque comme la barre des tâches ----------
+// Quand on a défilé vers le bas, le bandeau du haut (nom du site, menu, recherche) se cache.
+// Il réapparaît dès que la souris touche le bord haut de la fenêtre (ou sort par le haut, vers la barre des favoris),
+// et se recache quand la souris s'éloigne. Tout en haut de la page, il reste affiché normalement.
+(function masquerEnteteAuDefilement() {
+  let cache = false;
+  const hauteur = () => entete.offsetHeight;
+  const occupe = () => entete.contains(document.activeElement) && document.activeElement !== document.body // recherche en cours de saisie
+    || !!entete.querySelector(".menu-recherche:not([hidden]), .suggestions:not([hidden])");
+
+  function afficher() {
+    if (!cache) return;
+    cache = false;
+    entete.classList.remove("entete-cachee");
+  }
+  function masquer() {
+    if (cache || window.scrollY <= hauteur() || occupe()) return;
+    cache = true;
+    entete.classList.add("entete-cachee");
+  }
+
+  window.addEventListener("scroll", () => {
+    if (window.scrollY <= hauteur()) afficher();
+    else if (!entete.matches(":hover")) masquer();
+  }, { passive: true });
+
+  // Souris sur le bord haut de la page : le bandeau revient
+  document.addEventListener("mousemove", (e) => {
+    if (e.clientY <= 6) afficher();
+    else if (e.clientY > hauteur() + 40) masquer();
+  }, { passive: true });
+  // La souris quitte la page par le haut (vers la barre d'adresse / des favoris) : le bandeau revient aussi
+  document.addEventListener("mouseout", (e) => {
+    if (!e.relatedTarget && e.clientY <= 0) afficher();
+  });
+  // Au clavier : le bandeau reste visible tant qu'on y navigue
+  entete.addEventListener("focusin", afficher);
+})();
