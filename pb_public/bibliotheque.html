@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ma bibliothèque — Suivi Films &amp; Séries</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main>
+    <div class="barre-titre">
+      <h1>Ma bibliothèque</h1>
+      <p id="compteur" class="discret"></p>
+    </div>
+
+    <form id="filtres" class="filtres">
+      <div class="champ"><label for="f-type">Type</label>
+        <select id="f-type" name="type">
+          <option value="">Tous</option><option value="film">Films</option>
+          <option value="serie">Séries</option><option value="anime">Animés</option>
+        </select></div>
+      <div class="champ"><label for="f-statut">Statut</label>
+        <select id="f-statut" name="statut">
+          <option value="">Tous</option><option value="a_voir">À voir</option><option value="en_cours">En cours</option>
+          <option value="termine">Terminé</option><option value="en_pause">En pause</option><option value="abandonne">Abandonné</option>
+        </select></div>
+      <div class="champ"><label for="f-vu">Vu</label>
+        <select id="f-vu" name="vu">
+          <option value="">Tous</option><option value="vu">Vus</option><option value="pas_vu">Pas encore vus</option>
+        </select></div>
+      <div class="champ"><label for="f-tri">Trier par</label>
+        <select id="f-tri" name="tri">
+          <option value="ajout">Date d'ajout</option><option value="visionnage">Dernier visionnage</option>
+          <option value="ma_note">Ma note</option><option value="note_tmdb">Note TMDB</option>
+          <option value="titre">Titre</option><option value="annee">Année</option>
+        </select></div>
+      <div class="champ"><label for="f-ordre">Ordre</label>
+        <select id="f-ordre" name="ordre">
+          <option value="desc">Décroissant</option><option value="asc">Croissant</option>
+        </select></div>
+    </form>
+
+    <p id="message" class="discret"></p>
+    <div id="grille" class="grille-titres"></div>
+  </main>
+
+  <script src="js/commun.js"></script>
+  <script src="js/bibliotheque.js"></script>
+</body>
+</html>

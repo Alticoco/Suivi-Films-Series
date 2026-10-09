@@ -82,6 +82,19 @@ function episodes(idSource, saison) {
   return avecCache(idSource, `saison_${saison}`, () => fournisseur.episodes(idSource, saison));
 }
 
+// Résumé de tout ce qui est déjà en cache (affiche + note), pour afficher une grille
+// sans interroger la source titre par titre. Clé : "format:id" (ex. "serie:1399").
+// Les titres absents du cache sont simplement omis : la page les demande ensuite un par un.
+function resumes() {
+  const resultat = {};
+  const fiches = $app.findRecordsByFilter("cache_source", "source = {:s} && type_donnee ~ 'details_'", "", 0, 0, { s: NOM_SOURCE });
+  fiches.forEach((fiche) => {
+    const donnees = JSON.parse(fiche.getString("donnees"));
+    resultat[`${donnees.format}:${donnees.id_source}`] = { affiche: donnees.affiche, note_source: donnees.note_source };
+  });
+  return resultat;
+}
+
 // Supprime tout ce qui a plus de 6 mois. Renvoie le nombre de lignes supprimées.
 function nettoyerCache() {
   const limite = formatDate(new Date(Date.now() - JOURS_AVANT_SUPPRESSION * JOUR_EN_SECONDES * 1000));
@@ -90,4 +103,4 @@ function nettoyerCache() {
   return anciennes.length;
 }
 
-module.exports = { rechercher, details, saisons, episodes, nettoyerCache };
+module.exports = { rechercher, details, saisons, episodes, resumes, nettoyerCache };

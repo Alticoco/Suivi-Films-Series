@@ -9,6 +9,14 @@ const zone = document.getElementById("contenu");
 let titre = null;        // enregistrement « titres »
 let visionnages = [];    // ses visionnages, du plus récent au plus ancien
 
+// Si on vient de la bibliothèque, « retour » retrouve ses filtres (le navigateur les a gardés).
+function retourBibliotheque(evenement) {
+  if (document.referrer && new URL(document.referrer).pathname.endsWith("bibliotheque.html")) {
+    evenement.preventDefault();
+    history.back();
+  }
+}
+
 // Un film (TMDB), ou un titre manuel de type film. Un animé « film » compte aussi.
 function estFilm(t) {
   return t.source === "tmdb" ? t.format_source === "film" : t.type === "film";
@@ -89,7 +97,7 @@ function afficher() {
   bas.push(zoneDanger());
 
   zone.replaceChildren(
-    el("p", {}, el("a", { href: "catalogue.html" }, "← Catalogue")),
+    el("p", {}, el("a", { href: "bibliotheque.html", onclick: retourBibliotheque }, "← Ma bibliothèque")),
     el("div", { class: "fiche" }, colonneImage, colonneInfos),
     ...bas);
 
@@ -267,7 +275,7 @@ function ouvrirSupprimerTitre() {
       `« ${titre.titre} » et tous ses visionnages seront supprimés de ta bibliothèque. Cette action est définitive.`)),
     valider: async () => {
       await pbSupprimer("titres", titre.id); // les visionnages partent avec (suppression en cascade)
-      location.href = "catalogue.html";
+      location.href = "bibliotheque.html";
     },
   });
 }

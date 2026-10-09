@@ -7,6 +7,7 @@
 //   GET /api/source/details/{format}/{id}      format = film | serie
 //   GET /api/source/saisons/{id}
 //   GET /api/source/episodes/{id}/{saison}
+//   GET /api/source/resumes                    affiches + notes déjà en cache
 //
 // Note : dans PocketBase, chaque route est isolée (elle ne voit pas les
 // fonctions écrites en haut de ce fichier). On charge donc les modules
@@ -33,6 +34,11 @@ routerAdd("GET", "/api/source/saisons/{id}", (e) => {
 routerAdd("GET", "/api/source/episodes/{id}/{saison}", (e) => {
   return require(`${__hooks}/source/reponse.js`).repondre(e, (source) =>
     source.episodes(e.request.pathValue("id"), e.request.pathValue("saison")));
+});
+
+// Affiches et notes de tout ce qui est déjà en cache (pour la bibliothèque)
+routerAdd("GET", "/api/source/resumes", (e) => {
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.resumes());
 });
 
 // Tâche quotidienne (4 h du matin, si le PC est allumé) : vide le cache de plus de 6 mois.
