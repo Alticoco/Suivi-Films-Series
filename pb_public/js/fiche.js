@@ -1,7 +1,7 @@
 // Page Fiche titre : infos, statut, notes, image, suppression.
 // Pour un film : liste de mes visionnages + bouton « Vu ».
-// (Les épisodes des séries arrivent à l'étape 5.)
-// (Dépend de commun.js et formulaires.js)
+// Pour une série : voir fiche-serie.js.
+// (Dépend de commun.js, formulaires.js et fiche-serie.js)
 
 const idTitre = new URLSearchParams(location.search).get("id") || "";
 const zone = document.getElementById("contenu");
@@ -85,8 +85,7 @@ function afficher() {
 
   const bas = [];
   if (film) bas.push(sectionVisionnages());
-  else bas.push(el("section", { class: "carte" }, el("h2", {}, "Épisodes"),
-    el("p", { class: "discret" }, "Le suivi épisode par épisode arrive à l'étape 5.")));
+  else bas.push(sectionSerie()); // voir fiche-serie.js
   bas.push(zoneDanger());
 
   zone.replaceChildren(

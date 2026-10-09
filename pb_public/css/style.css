@@ -159,6 +159,28 @@ button.danger {
 .actions-ligne { display: flex; gap: var(--espace-petit); align-items: flex-start; }
 .actions-ligne button { padding: 0.25rem var(--espace-petit); font-size: var(--taille-petit); }
 .zone-danger { margin: var(--espace-grand) 0; }
+
+/* Séries : épisodes */
+.progression { font-weight: 600; margin-top: 0; }
+.barre-serie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--espace-moyen); margin-bottom: var(--espace-moyen); }
+.note-serie { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espace-petit); margin-bottom: var(--espace-moyen); }
+.note-serie input { width: 6rem; }
+.saison { border-top: 1px solid var(--couleur-bordure); padding: var(--espace-petit) 0; }
+.saison summary { cursor: pointer; font-weight: 600; padding: 0.25rem 0; }
+.actions-saison { margin: var(--espace-petit) 0; }
+.actions-saison button { padding: 0.25rem var(--espace-petit); font-size: var(--taille-petit); }
+.liste-episodes { list-style: none; margin: 0; padding: 0; }
+.liste-episodes li {
+  display: grid; grid-template-columns: 1fr auto auto; gap: var(--espace-moyen); align-items: center;
+  padding: 0.3rem 0; border-top: 1px solid var(--couleur-bordure); font-size: var(--taille-petit);
+}
+.liste-episodes label { display: flex; gap: 0.35rem; align-items: center; cursor: pointer; }
+.episode-vu label { color: var(--couleur-texte-discret); }
+.vu-le { color: var(--couleur-succes); white-space: nowrap; }
+button.lien { background: none; border: none; padding: 0; color: var(--couleur-accent); text-decoration: underline; font-size: inherit; }
+@media (max-width: 700px) {
+  .liste-episodes li { grid-template-columns: 1fr; gap: 0.1rem; }
+}
 @media (max-width: 700px) {
   .fiche { grid-template-columns: 1fr; }
   .fiche-image { max-width: var(--largeur-affiche-fiche); }
