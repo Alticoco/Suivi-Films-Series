@@ -31,7 +31,10 @@ Page **Sauvegarde** du site : export Excel (`.xlsx`), import (fusionner ou rempl
 ```
 pb_public/        le site (HTML / CSS / JavaScript simples, sans framework)
   css/variables.css   toutes les couleurs, polices et espacements (à modifier pour changer le design)
+  js/icones.js        icônes (jeu Lucide)
   js/vendor/          bibliothèque tierce copiée localement (SheetJS, licence Apache 2.0)
+  fonts/              polices Geist et Geist Mono copiées localement (licence OFL), voir fonts/LISEZ-MOI.txt
+  img/                logo TMDB, icône de l'onglet
 pb_hooks/         logique serveur (JavaScript PocketBase)
   source/             module TMDB (seul endroit qui parle à TMDB) + cache
   perso/              statistiques
@@ -40,6 +43,10 @@ scripts/          lancement, arrêt, création des raccourcis
 secrets/          jeton TMDB (non versionné, sauf le fichier d'exemple)
 pb_data/          base de données (non versionnée, créée automatiquement)
 ```
+
+## Design
+
+Le style suit le système « Token Mesh » décrit dans [`DESIGN.md`](DESIGN.md) : fond ardoise sombre, police Geist (chiffres en Geist Mono), une seule couleur d'accent (menthe), pas de dégradé ni d'émoji. Les valeurs sont centralisées dans `pb_public/css/variables.css`.
 
 ## Ce qui n'est jamais publié sur GitHub
 

@@ -5,15 +5,22 @@
 // ---------- Petits outils ----------
 function afficherEtat(id, ok, texte) {
   const element = document.getElementById(id);
-  element.textContent = (ok ? "✅ " : "❌ ") + texte;
-  element.className = ok ? "ok" : "ko";
+  element.replaceChildren(icone(ok ? "check" : "x"), texte);
+  element.className = ok ? "ok icone-texte" : "ko icone-texte";
 }
 
 function vignette(titre, affiche) {
   const adresse = urlImageTitre(titre, affiche, "w185");
-  return adresse
-    ? el("img", { class: "vignette", src: adresse, alt: `Affiche de ${titre.titre}`, loading: "lazy" })
-    : el("div", { class: "vignette vignette-vide" }, "?");
+  if (adresse) return el("img", { class: "vignette", src: adresse, alt: `Affiche de ${titre.titre}`, loading: "lazy" });
+  const vide = el("div", { class: "vignette vignette-vide" }, "?");
+  // Titre TMDB dont l'affiche n'est pas encore en cache : on la demande, puis on remplace le « ? »
+  if (titre.source === "tmdb") {
+    source(`details/${titre.format_source}/${titre.id_source}`).then((d) => {
+      const url = urlAffiche(d.affiche, "w185");
+      if (url) vide.replaceWith(el("img", { class: "vignette", src: url, alt: `Affiche de ${titre.titre}`, loading: "lazy" }));
+    }).catch(() => {});
+  }
+  return vide;
 }
 
 // ---------- État du serveur (zone repliée en bas) ----------
@@ -62,7 +69,7 @@ function carteDernier(titre, visionnage, affiche) {
     el("div", {},
       el("strong", {}, titre.titre),
       el("p", { class: "discret" }, `Vu le ${formatDate(visionnage.date)}${precision}`),
-      visionnage.note ? el("p", { class: "ma-note" }, `★ ${visionnage.note}`) : null));
+      visionnage.note ? el("p", { class: "ma-note" }, icone("star"), String(visionnage.note)) : null));
 }
 
 function afficherDerniers(titres, visionnages, resumes) {
@@ -103,7 +110,7 @@ function majLigneSerie(elements, titre, saisons, siens) {
     : `${debut} · à jour (en attente de nouveaux épisodes)`;
   elements.action.replaceChildren();
   if (!p.prochain) return;
-  const bouton = el("button", { type: "button", class: "principal" }, `✓ S${p.prochain.saison}E${p.prochain.episode}`);
+  const bouton = el("button", { type: "button", class: "principal" }, icone("check"), `S${p.prochain.saison}E${p.prochain.episode}`);
   bouton.addEventListener("click", async () => {
     bouton.disabled = true;
     try {
@@ -183,6 +190,7 @@ async function afficherRappelSauvegarde() {
 
 // ---------- Démarrage ----------
 async function demarrer() {
+  document.querySelector(".tuile-lien .tuile-valeur").replaceChildren(icone("arrow-right"));
   verifierEtat();
   afficherRappelSauvegarde();
   afficherMiniStats();

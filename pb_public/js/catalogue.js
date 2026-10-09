@@ -76,8 +76,11 @@ function ouvrirDetail(resultat, apresAjout) {
       : el("div", { class: "affiche" }, "Pas d'affiche"));
   };
   dessinerAffiche(resultat.affiche);
-  const noteTexte = (valeur, votes) => (valeur ? `★ ${valeur.toFixed(1)} / 10 sur TMDB${votes ? ` (${votes} votes)` : ""}` : "Pas encore de note TMDB");
-  note.textContent = noteTexte(resultat.note_source, 0);
+  const majNote = (valeur, votes) => {
+    if (!valeur) { note.replaceChildren("Pas encore de note TMDB"); return; }
+    note.replaceChildren(icone("star"), `${valeur.toFixed(1)} / 10 sur TMDB${votes ? ` (${votes} votes)` : ""}`);
+  };
+  majNote(resultat.note_source, 0);
 
   const actions = el("div", { class: "detail-actions" });
   const dessinerActions = () => {
@@ -85,7 +88,7 @@ function ouvrirDetail(resultat, apresAjout) {
     const dejaLa = bibliotheque.get(cle);
     if (dejaLa) {
       actions.append(
-        el("p", { class: "badge-bibliotheque" }, `✓ Dans ma bibliothèque · ${LIBELLES_STATUT[dejaLa.statut]}`),
+        el("p", { class: "badge-bibliotheque" }, icone("check"), `Dans ma bibliothèque · ${LIBELLES_STATUT[dejaLa.statut]}`),
         el("a", { href: `fiche.html?id=${dejaLa.id}`, class: "bouton-lien" }, "Ouvrir ma fiche"));
       return;
     }
@@ -93,8 +96,8 @@ function ouvrirDetail(resultat, apresAjout) {
     const types = [[estFilmTmdb ? "film" : "serie", estFilmTmdb ? "Film" : "Série"], ["anime", "Animé"]];
     const formulaire = el("form", { class: "detail-formulaire" });
     const message = el("p", { class: "erreur-dialogue", hidden: true });
-    const boutonAVoir = el("button", { type: "button" }, "＋ Ajouter à voir");
-    const boutonVu = el("button", { type: "button", class: "principal" }, "✓ Marquer comme vu");
+    const boutonAVoir = el("button", { type: "button" }, icone("plus"), "Ajouter à voir");
+    const boutonVu = el("button", { type: "button", class: "principal" }, icone("check"), "Marquer comme vu");
     formulaire.append(
       champsRadio("type", types, resultat.anime_probable ? "anime" : types[0][0], "Type de titre"),
       el("div", { class: "detail-bloc" }, el("h3", {}, "Pas encore vu ?"), boutonAVoir),
@@ -124,7 +127,7 @@ function ouvrirDetail(resultat, apresAjout) {
   };
   dessinerActions();
 
-  const fermer = el("button", { type: "button", class: "fermer", "aria-label": "Fermer" }, "✕");
+  const fermer = el("button", { type: "button", class: "fermer", "aria-label": "Fermer" }, icone("x"));
   const fenetre = el("dialog", { class: "dialogue-detail" },
     fermer,
     el("div", { class: "detail" }, afficheZone,
@@ -154,7 +157,7 @@ function ouvrirDetail(resultat, apresAjout) {
       if (d.statut_diffusion && STATUTS_DIFFUSION[d.statut_diffusion]) morceaux.push(STATUTS_DIFFUSION[d.statut_diffusion]);
     }
     meta.textContent = morceaux.filter(Boolean).join(" · ");
-    note.textContent = noteTexte(d.note_source, d.nb_votes);
+    majNote(d.note_source, d.nb_votes);
     genres.textContent = d.genres.join(", ");
     synopsis.textContent = d.synopsis || "Pas de synopsis disponible.";
     if (d.affiche && d.affiche !== resultat.affiche) dessinerAffiche(d.affiche);
@@ -238,7 +241,7 @@ function majPastille(resultat) {
   const carte = cartes.get(cleTitre(resultat.format, resultat.id_source));
   if (!carte || carte.querySelector(".pastille")) return;
   const dejaLa = bibliotheque.get(cleTitre(resultat.format, resultat.id_source));
-  if (dejaLa) carte.querySelector(".carte-affiche-image").append(el("span", { class: "pastille", title: LIBELLES_STATUT[dejaLa.statut] }, "✓"));
+  if (dejaLa) carte.querySelector(".carte-affiche-image").append(el("span", { class: "pastille", title: LIBELLES_STATUT[dejaLa.statut] }, icone("check")));
 }
 
 function creerCarte(resultat) {
@@ -317,7 +320,7 @@ function afficherCategories() {
   if (texteRecherche) {
     zone.replaceChildren(
       el("span", { class: "discret" }, `Résultats pour « ${texteRecherche} » `),
-      el("a", { href: "catalogue.html" }, "← Revenir à la découverte"));
+      el("a", { href: "catalogue.html" }, icone("arrow-left"), "Revenir à la découverte"));
     return;
   }
   zone.replaceChildren(...CATEGORIES.map(([cle, libelle]) =>
