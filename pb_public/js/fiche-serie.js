@@ -37,10 +37,11 @@ function dateDeCochage() {
   return (champ && champ.value) || dateDuJour();
 }
 
+// Case « Vu avant, date inconnue » : les épisodes cochés sont enregistrés sans date
+let cocherSansDate = false;
+
 async function cocherEpisode(saison, episode) {
-  const ligne = await pbCreer("visionnages", {
-    titre: titre.id, date: `${dateDeCochage()} 00:00:00.000Z`, saison, episode,
-  });
+  const ligne = await cocherEpisodeSerie(titre.id, saison, episode, dateDeCochage(), cocherSansDate);
   visionnages.push(ligne);
 }
 
@@ -109,9 +110,10 @@ function ouvrirDateEpisode(saison, episode) {
     titre: `Date de visionnage (S${saison}E${episode})`,
     libelleValider: "Enregistrer",
     remplir: (formulaire) => formulaire.append(el("div", { class: "champ" },
-      el("label", {}, "Date"), el("input", { type: "date", name: "date", required: true, value: String(ligne.date).slice(0, 10) }))),
+      el("label", {}, "Date"), el("input", { type: "date", name: "date", required: true, value: ligne.avant ? dateDuJour() : String(ligne.date).slice(0, 10) }))),
     valider: async (donnees) => {
-      const misAJour = await pbModifier("visionnages", ligne.id, { date: `${donnees.get("date")} 00:00:00.000Z` });
+      // Donner une date à un épisode « vu avant » le fait sortir de « vu avant »
+      const misAJour = await pbModifier("visionnages", ligne.id, { date: `${donnees.get("date")} 00:00:00.000Z`, avant: false });
       visionnages = visionnages.map((v) => (v.id === ligne.id ? misAJour : v));
       dessinerSerie();
     },
@@ -182,9 +184,13 @@ function dessinerSerie() {
     if (p.prochain) await basculerEpisode(p.prochain.saison, p.prochain.episode, true);
   } }, p.prochain ? `Cocher le suivant (S${p.prochain.saison}E${p.prochain.episode})` : "Tout est vu");
 
+  const champDate = el("input", { type: "date", id: "date-cochage", value: (document.getElementById("date-cochage") || {}).value || dateDuJour(), disabled: cocherSansDate });
+  const caseAvant = el("input", { type: "checkbox", checked: cocherSansDate });
+  caseAvant.addEventListener("change", () => { cocherSansDate = caseAvant.checked; champDate.disabled = cocherSansDate; });
   const barre = el("div", { class: "barre-serie" },
-    el("label", { class: "discret" }, "Date appliquée quand je coche : ",
-      el("input", { type: "date", id: "date-cochage", value: (document.getElementById("date-cochage") || {}).value || dateDuJour() })),
+    el("label", { class: "discret" }, "Date appliquée quand je coche : ", champDate),
+    el("label", { class: "option-precedents", title: "Les épisodes cochés sont enregistrés sans date : tu les avais vus avant, sans savoir quand" },
+      caseAvant, "Vu avant, date inconnue"),
     creerOptionPrecedents(),
     boutonSuivant);
 
@@ -217,7 +223,7 @@ function dessinerSaison(saison, vus) {
       el("label", { title: episode.synopsis || "" }, boite, ` ${episode.numero}. ${episode.nom}`),
       el("span", { class: "discret" }, infos.join(" · ")),
       ligne ? el("span", { class: "vu-le" },
-        `vu le ${formatDate(ligne.date)} `,
+        ligne.avant ? "vu avant " : `vu le ${formatDate(ligne.date)} `,
         el("button", { type: "button", class: "lien", onclick: () => ouvrirDateEpisode(saison.numero, episode.numero) }, "modifier")) : null);
   }));
 

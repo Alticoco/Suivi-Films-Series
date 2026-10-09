@@ -65,6 +65,8 @@ function creerFormulaireSerie(resultat, apres) {
   const formulaire = el("form", { class: "detail-formulaire" });
   const message = el("p", { class: "erreur-dialogue", hidden: true });
   const date = el("input", { type: "date", name: "date", value: dateDuJour() });
+  const caseAvant = el("input", { type: "checkbox", name: "episodes_avant" }); // « vu avant, date inconnue »
+  caseAvant.addEventListener("change", () => { date.disabled = caseAvant.checked; });
   const selectSaison = el("select", { "aria-label": "Saison", disabled: true });
   const liste = el("ul", { class: "liste-episodes liste-episodes-choix" });
   const compteur = el("span", { class: "discret" });
@@ -177,7 +179,7 @@ function creerFormulaireSerie(resultat, apres) {
       titre: resultat.titre, annee: resultat.annee || 0, statut: progression.complet ? "termine" : "en_cours", vu_avant: false,
     });
     try {
-      await enParallele(episodes, ([saison, episode]) => cocherEpisodeSerie(titre.id, saison, episode, fd.get("date")), () => {});
+      await enParallele(episodes, ([saison, episode]) => cocherEpisodeSerie(titre.id, saison, episode, fd.get("date"), fd.get("episodes_avant") === "on"), () => {});
     } catch (erreur) {
       await pbSupprimer("titres", titre.id); // tout ou rien : pas de série à moitié enregistrée
       throw erreur;
@@ -194,7 +196,7 @@ function creerFormulaireSerie(resultat, apres) {
       etatChargement,
       zoneEpisodes),
     el("div", { class: "detail-bloc" }, el("h3", {}, "Déjà vue en entier ?"),
-      el("p", { class: "discret" }, "Enregistrée comme « vue avant » : pas de date, pas d'épisodes précis."), boutonDejaVue),
+      el("p", { class: "discret" }, "Enregistrée comme « vue avant » : pas de date, pas d'épisodes précis. Si tu n'en as vu qu'une partie, coche plutôt les épisodes ci-dessus avec « Vu avant, date inconnue »."), boutonDejaVue),
     message);
   // Zone des épisodes : saison, boutons rapides, liste, date puis enregistrement
   zoneEpisodes.append(
@@ -202,7 +204,8 @@ function creerFormulaireSerie(resultat, apres) {
     el("div", { class: "barre-boutons" }, boutonSaison, boutonJusqua),
     creerOptionPrecedents(),
     liste,
-    el("div", { class: "champ champ-date" }, el("label", {}, "Date du visionnage (pour les épisodes cochés)"), date),
+    el("div", { class: "champ champ-date" }, el("label", {}, "Date du visionnage (pour les épisodes cochés)"), date,
+      el("label", { class: "choix choix-avant", title: "Les épisodes cochés sont enregistrés sans date" }, caseAvant, "Vu avant, date inconnue (ne pas enregistrer de date)")),
     el("div", { class: "barre-enregistrer" }, compteur, boutonEnregistrer));
   return formulaire;
 }

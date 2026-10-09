@@ -608,3 +608,12 @@ button.saga-film:disabled { opacity: 1; cursor: default; }
 .saga-annee { font-family: var(--police-mono); font-size: 0.7rem; color: var(--couleur-texte-discret); }
 .saga .pastille { width: 1.3rem; height: 1.3rem; top: var(--espace-1); right: var(--espace-1); }
 .saga .pastille .icone { width: 0.75rem; height: 0.75rem; }
+
+/* Case « Vu avant, date inconnue » : texte normal à côté de la case (pas en étiquette majuscule) */
+.champ > label.choix-avant {
+  display: flex; flex-wrap: nowrap; align-items: flex-start; gap: var(--espace-2); margin-top: var(--espace-2);
+  font-family: var(--police-texte); font-size: var(--taille-ui); font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--couleur-texte-discret);
+}
+.choix-avant input { margin-top: 0.15rem; flex-shrink: 0; }
+
+.champ-date input[type="checkbox"] { width: 1rem; height: 1rem; }

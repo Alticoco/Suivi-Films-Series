@@ -77,6 +77,8 @@ Le reste du code ne connaît pas TMDB. Plus tard, on pourra ajouter TVmaze, AniL
 | `episode` | nombre | vide pour un film |
 | `note` | nombre 0–10 | films uniquement, facultatif |
 | `commentaire` | texte | films uniquement, facultatif |
+| `avant` | booléen | « vu avant, date inconnue » : épisode vu avant la création du site, sans date (permet de dire « vu jusqu'à tel épisode » sans prétendre avoir tout vu) |
+| `ajoute_le` | date (automatique) | quand la ligne a été enregistrée |
 
 - Convention technique : PocketBase stocke un nombre vide comme `0`. Une note `0` (ou `note_serie`, `annee`, `duree_min` à `0`) signifie donc « pas de note / inconnu ». Pour un film, `saison` et `episode` valent aussi `0` ; un épisode a toujours `episode` ≥ 1 (la saison `0` correspond aux épisodes spéciaux).
 - **Film** : une ligne par visionnage. Revoir un film = une nouvelle ligne avec une nouvelle date (historique des revisionnages, temps écoulé entre deux visionnages affiché sur la fiche).
@@ -99,6 +101,7 @@ Un seul enregistrement : `dernier_export` (date).
 - **Film** : un visionnage ajouté → `termine`.
 - **Série** : premier épisode coché → `en_cours`. Tous les épisodes déjà diffusés cochés → `termine`. Si une nouvelle saison sort, la série repasse `en_cours`.
 - `en_pause` et `abandonne` se choisissent à la main. Cocher un nouvel épisode remet la série en `en_cours`.
+- **Vu avant (série)** : deux façons. « Déjà vue en entier » marque tout le titre (statut `termine`). Pour une série vue en partie, on coche les épisodes avec « Vu avant, date inconnue » : ils sont enregistrés sans date (`avant`), comptent dans la progression (statut `en_cours` tant que ce n'est pas fini) mais pas dans le journal, le temps passé ni les années.
 - **Vu avant** : marqueur sans date. Le titre compte comme vu (statut `termine`). Si je le revois plus tard, j'ajoute un visionnage daté normalement.
 
 ### Bouton « Vu » (films)
