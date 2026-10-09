@@ -109,17 +109,19 @@ async function lireFichierImport(fichier) {
     if (!identifiant && !texte(ligne["Titre"]).trim()) return; // ligne vide
     const titre = titres.get(identifiant);
     if (!titre) return erreurs.push(`« ${FEUILLE_HISTORIQUE} », ligne ${numero} : ce titre (${identifiant || "sans identifiant"}) n'est pas dans la feuille « ${FEUILLE_TITRES} ».`);
-    if (sansAccent(ligne["Date"]) === sansAccent(TEXTE_VU_AVANT)) { titre.vu_avant = true; return; }
-    const date = lireDate(ligne["Date"]);
-    if (!date) return erreurs.push(`« ${FEUILLE_HISTORIQUE} », ligne ${numero} : date illisible (« ${texte(ligne["Date"])} »).`);
     const episode = nombre(ligne["Épisode"]);
     const saison = episode > 0 ? nombre(ligne["Saison"]) : 0;
+    // « Vu avant » sans épisode = le titre entier ; avec un épisode = cet épisode vu avant, sans date
+    const vuAvant = sansAccent(ligne["Date"]) === sansAccent(TEXTE_VU_AVANT);
+    if (vuAvant && episode === 0) { titre.vu_avant = true; return; }
+    const date = vuAvant ? "" : lireDate(ligne["Date"]);
+    if (!vuAvant && !date) return erreurs.push(`« ${FEUILLE_HISTORIQUE} », ligne ${numero} : date illisible (« ${texte(ligne["Date"])} »).`);
     if (episode > 0) {
       const cle = `${identifiant}|${saison}|${episode}`;
       if (episodesVus.has(cle)) return erreurs.push(`« ${FEUILLE_HISTORIQUE} », ligne ${numero} : épisode S${saison}E${episode} en double pour « ${titre.titre} ».`);
       episodesVus.add(cle);
     }
-    visionnages.push({ identifiant, date, saison, episode, note: nombre(ligne["Note"]), commentaire: texte(ligne["Commentaire"]) });
+    visionnages.push({ identifiant, date, avant: vuAvant, saison, episode, note: nombre(ligne["Note"]), commentaire: texte(ligne["Commentaire"]) });
   });
 
   return { titres: [...titres.values()], visionnages, erreurs };
@@ -208,7 +210,8 @@ async function appliquerImport(donnees, mode, progression) {
     else aCreer.push(v);
   }
   await enParallele(aCreer, (v) => pbCreer("visionnages", {
-    titre: idBase.get(v.identifiant), date: `${v.date} 00:00:00.000Z`,
+    titre: idBase.get(v.identifiant),
+    ...(v.avant ? { avant: true } : { date: `${v.date} 00:00:00.000Z` }),
     saison: v.saison, episode: v.episode, note: v.note, commentaire: v.commentaire,
   }), (f, n) => progression("Création des visionnages", f, n));
   bilan.visionnagesAjoutes = aCreer.length;

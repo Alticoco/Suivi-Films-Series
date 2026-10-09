@@ -44,7 +44,7 @@ function construireFeuilles(titres, visionnages) {
     .sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.created).localeCompare(String(b.created)))
     .map((v) => {
       const t = parId.get(v.titre);
-      return [t.titre, vide(t.annee), LIBELLES_TYPE[t.type], formatDate(v.date),
+      return [t.titre, vide(t.annee), LIBELLES_TYPE[t.type], v.avant ? TEXTE_VU_AVANT : formatDate(v.date),
         v.episode > 0 ? v.saison : "", v.episode > 0 ? v.episode : "",
         vide(v.note), v.commentaire || "", LIBELLES_STATUT[t.statut], identifiantTitre(t)];
     });

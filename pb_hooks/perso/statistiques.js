@@ -69,6 +69,7 @@ function calculer() {
     }
 
     siens.forEach((v) => {
+      if (v.getBool("avant")) return; // « vu avant » : pas de date, donc ni temps passé ni année
       const a = annee(v.getString("date").slice(0, 4));
       let minutes = duree;
       if (film) {

@@ -10,7 +10,7 @@
   color-scheme: dark; /* menus, calendriers et barres de défilement en sombre */
 
   /* Surfaces */
-  --couleur-fond: #101216;          /* page (Slate) */
+  --couleur-fond: #000000;          /* page : noir pur, choisi par l'utilisateur (la maquette proposait #101216) */
   --couleur-carte: #1a1d22;         /* cartes (Slate Lift) */
   --couleur-panneau: #1f232a;       /* bouton secondaire, survol (Pane) */
   --couleur-trait: rgba(230, 232, 235, 0.08);       /* bordure de carte, séparateurs */

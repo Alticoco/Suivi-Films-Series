@@ -32,7 +32,7 @@ function construireEntrees(titres, visionnages) {
   const regroupes = new Map(); // "jour|titre" → entrée d'épisodes
   for (const v of visionnages) {
     const titre = parId.get(v.titre);
-    if (!titre) continue;
+    if (!titre || v.avant) continue; // « vu avant » : sans date, il n'a pas sa place dans un journal daté
     const jour = String(v.date).slice(0, 10);
     if (v.episode > 0) {
       const cle = `${jour}|${titre.id}`;

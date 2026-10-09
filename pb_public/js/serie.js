@@ -56,11 +56,13 @@ function calculerProgression(saisons, visionnagesTitre) {
   return { vus, total: vus.size, diffuses, diffusesVus, prochain, dernier, complet: diffuses > 0 && diffusesVus === diffuses };
 }
 
-// Coche un épisode (à la date donnée, aujourd'hui par défaut) et renvoie la nouvelle ligne.
-function cocherEpisodeSerie(idTitre, saison, episode, date) {
-  return pbCreer("visionnages", {
-    titre: idTitre, date: `${date || dateDuJour()} 00:00:00.000Z`, saison, episode,
-  });
+// Coche un épisode et renvoie la nouvelle ligne : à la date donnée (aujourd'hui par défaut), ou
+// « vu avant, date inconnue » (avant = true : aucune date n'est enregistrée).
+function cocherEpisodeSerie(idTitre, saison, episode, date, avant) {
+  const donnees = { titre: idTitre, saison, episode };
+  if (avant) donnees.avant = true;
+  else donnees.date = `${date || dateDuJour()} 00:00:00.000Z`;
+  return pbCreer("visionnages", donnees);
 }
 
 // ---------- Option « cocher aussi tous les épisodes précédents » ----------

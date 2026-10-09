@@ -57,6 +57,7 @@ async function afficherMiniStats() {
 function dernierVisionnageParTitre(visionnages) {
   const derniers = new Map();
   for (const v of visionnages) {
+    if (v.avant) continue; // « vu avant » : pas de date, traité à part (voir derniersVus)
     const actuel = derniers.get(v.titre);
     const cle = `${v.date}|${v.created}`;
     if (!actuel || cle > `${actuel.date}|${actuel.created}`) derniers.set(v.titre, v);
@@ -68,11 +69,25 @@ function dernierVisionnageParTitre(visionnages) {
 // Un titre « déjà vu avant » (sans date de visionnage) compte à la date où je l'ai ajouté.
 function derniersVus(titres, visionnages, nombre) {
   const dernierParTitre = dernierVisionnageParTitre(visionnages);
+  // Épisodes « vus avant » (sans date) : on retient l'ajout le plus récent et l'épisode le plus avancé
+  const avantParTitre = new Map();
+  for (const v of visionnages) {
+    if (!v.avant) continue;
+    const a = avantParTitre.get(v.titre) || { cree: "", saison: 0, episode: 0 };
+    if ((v.ajoute_le || "") > a.cree) a.cree = v.ajoute_le || "";
+    if (v.saison > a.saison || (v.saison === a.saison && v.episode > a.episode)) { a.saison = v.saison; a.episode = v.episode; }
+    avantParTitre.set(v.titre, a);
+  }
   const lignes = [];
   for (const titre of titres) {
     const visionnage = dernierParTitre.get(titre.id);
+    const avant = avantParTitre.get(titre.id);
     if (visionnage) lignes.push({ titre, visionnage, cle: `${visionnage.date}|${visionnage.created}` });
-    else if (titre.vu_avant) lignes.push({ titre, visionnage: null, cle: `${titre.ajoute_le}` });
+    else if (avant) { // anciennes lignes sans date d'enregistrement : on prend la date d'ajout du titre
+      const quand = avant.cree || titre.ajoute_le;
+      lignes.push({ titre, visionnage: null, jusqua: `S${avant.saison}E${avant.episode}`, ajoute: quand, cle: quand });
+    }
+    else if (titre.vu_avant) lignes.push({ titre, visionnage: null, ajoute: titre.ajoute_le, cle: `${titre.ajoute_le}` });
   }
   lignes.sort((a, b) => (a.cle < b.cle ? 1 : -1));
   return {
@@ -84,7 +99,8 @@ function derniersVus(titres, visionnages, nombre) {
 function carteCarrousel(ligne, affiche, estLeDernier) {
   const { titre, visionnage } = ligne;
   const precision = visionnage && visionnage.episode > 0 ? ` · S${visionnage.saison}E${visionnage.episode}` : "";
-  const quand = visionnage ? `Vu le ${formatDate(visionnage.date)}${precision}` : `Vu avant · ajouté le ${formatDate(titre.ajoute_le)}`;
+  const quand = visionnage ? `Vu le ${formatDate(visionnage.date)}${precision}`
+    : `Vu avant${ligne.jusqua ? ` · jusqu'à ${ligne.jusqua}` : ""} · ajouté le ${formatDate(ligne.ajoute)}`;
   return el("a", { class: "carrousel-carte", href: `fiche.html?id=${titre.id}`, role: "listitem" },
     el("span", { class: "carrousel-cadre" },
       vignette(titre, affiche, "carrousel-affiche"),
