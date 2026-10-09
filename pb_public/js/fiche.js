@@ -76,7 +76,7 @@ function afficher() {
   } }, "Enregistrer mes notes");
 
   const colonneInfos = el("div", { class: "fiche-infos" },
-    el("h1", {}, titre.titre),
+    el("div", { class: "titre-fiche" }, el("h1", {}, titre.titre), creerBoutonCoeur(() => titre)),
     el("p", { class: "discret" }, sousTitre),
     infosSource,
     el("div", { class: "champ fiche-statut" }, el("label", { for: "statut" }, "Statut"), selectStatut),

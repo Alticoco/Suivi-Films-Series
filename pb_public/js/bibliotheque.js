@@ -88,6 +88,7 @@ function correspond(ligne, f) {
   if (f.statut && t.statut !== f.statut) return false;
   if (f.vu === "vu" && !ligne.vu) return false;
   if (f.vu === "pas_vu" && ligne.vu) return false;
+  if (f.selection === "coeur" && !t.coup_de_coeur) return false;
   return true;
 }
 
@@ -128,13 +129,15 @@ function creerCarte(ligne) {
     ? el("img", { class: "affiche", src: adresse, alt: `Affiche de ${t.titre}`, loading: "lazy" })
     : el("div", { class: "affiche" }, t.titre);
   const infos = [LIBELLES_TYPE[t.type], t.annee || null].filter(Boolean).join(" · ");
-  return el("a", { class: "carte-titre carte-lien", href: `fiche.html?id=${t.id}` }, affiche,
+  const lien = el("a", { class: "carte-titre carte-lien", href: `fiche.html?id=${t.id}` }, affiche,
     el("div", { class: "carte-corps" },
       el("h2", {}, t.titre),
       el("p", { class: "discret" }, infos),
       el("p", { class: "carte-pied" },
         el("span", { class: `statut statut-${t.statut}` }, LIBELLES_STATUT[t.statut]),
         ligne.maNote ? el("span", { class: "ma-note" }, icone("star"), String(ligne.maNote)) : null)));
+  // Le cœur est à côté du lien (pas dedans) : on peut le cliquer sans ouvrir la fiche
+  return el("div", { class: "carte-conteneur" }, lien, creerBoutonCoeur(() => t, afficher));
 }
 
 function afficher() {

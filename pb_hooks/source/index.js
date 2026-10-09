@@ -80,7 +80,8 @@ function decouvrir(categorie, page) {
 // en plus rapide). « Inclure » = au moins un des pays choisis ; « exclure » = aucun des pays exclus
 // (une coproduction avec un pays exclu est donc écartée).
 function explorer(parametres) {
-  const page = fournisseur.explorer(parametres);
+  // Avec une personne choisie : sa filmographie (mêmes filtres) ; sinon le catalogue entier
+  const page = parametres.personne_id ? fournisseur.filmographie(parametres) : fournisseur.explorer(parametres);
   const liste = (v) => (v || "").split(",").map((x) => x.trim()).filter((x) => x);
   const inclus = liste(parametres.pays_inclus);
   const exclus = liste(parametres.pays_exclus);
@@ -96,6 +97,11 @@ function explorer(parametres) {
     return !codes.some((c) => interdits[c]);
   });
   return page;
+}
+
+// Les personnes (acteurs, réalisateurs...) portant ce nom
+function personnes(texte) {
+  return fournisseur.personnes(texte);
 }
 
 // Les choix de filtres proposés par la page (genres, pays, régions)
@@ -167,4 +173,4 @@ function nettoyerCache() {
   return anciennes.length;
 }
 
-module.exports = { rechercher, decouvrir, explorer, filtres, pays, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };
+module.exports = { rechercher, decouvrir, explorer, personnes, filtres, pays, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };

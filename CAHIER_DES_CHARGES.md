@@ -61,6 +61,7 @@ Le reste du code ne connaît pas TMDB. Plus tard, on pourra ajouter TVmaze, AniL
 | `annee` | nombre | année de sortie |
 | `statut` | choix | `a_voir`, `en_cours`, `termine`, `en_pause`, `abandonne` |
 | `vu_avant` | booléen | « vu avant la création du site », sans date |
+| `coup_de_coeur` | booléen | coup de cœur (cœur sur l'affiche et sur la fiche, filtre « Coups de cœur » de la bibliothèque) |
 | `note_serie` | nombre 0–10 | séries/animés uniquement, facultatif |
 | `notes` | texte long | mes notes libres sur le titre |
 | `duree_min` | nombre | uniquement pour les titres manuels (pour les stats) |
@@ -117,9 +118,9 @@ En-tête commun : navigation + barre de recherche. Pied de page : logo et mentio
    - Séries en cours avec accès rapide « cocher l'épisode suivant ».
    - Bandeau de rappel de sauvegarde (voir §8).
    - Mini-stats : temps total passé en visionnage, nombre de titres vus cette année.
-2. **Catalogue** — par défaut, on se balade dans des listes TMDB (tendances, films à l'affiche, populaires, mieux notés) avec un défilement infini d'affiches ; la recherche dans TMDB (films et séries) affiche ses résultats de la même façon. Un panneau **Filtres** permet d'inclure ou d'exclure des genres, des pays et des régions (ex. sans l'Asie, sans les États-Unis, seulement la France), de choisir films / séries, une période d'années et un tri ; les pays sont vérifiés d'après les vrais pays de production. Le pays s'affiche sous chaque affiche. Un clic sur une affiche ouvre une fenêtre de détail (synopsis, récapitulatif façon carte : année, box-office, studio, classification, score, pays, réalisateur, producteurs et acteurs avec photos ; boutons d'ajout, date / note / commentaire pour « Vu »). Pour une série, la fenêtre permet de choisir la saison, de voir la liste des épisodes et de cocher ceux déjà vus (ou « toute la saison », « tout jusqu'à cette saison ») dès l'ajout. Une option « cocher aussi tous les épisodes précédents » (saisons et épisodes d'avant) existe aussi sur la fiche d'une série. Sur chaque résultat : « Ajouter à voir », « Vu », et un indicateur s'il est déjà dans ma bibliothèque. Bouton **« Ajouter un titre manuellement »**.
+2. **Catalogue** — par défaut, on se balade dans des listes TMDB (tendances, films à l'affiche, populaires, mieux notés) avec un défilement infini d'affiches ; la recherche dans TMDB (films et séries) affiche ses résultats de la même façon. Un panneau **Filtres** permet de chercher un acteur (rôles principaux) ou un réalisateur par son nom, d'inclure (vert) ou d'exclure (rouge) des genres, des pays et des régions (ex. sans l'Asie, sans les États-Unis, seulement la France), de choisir films / séries, une période d'années et un tri ; les pays sont vérifiés d'après les vrais pays de production. Le pays s'affiche sous chaque affiche. Un clic sur une affiche ouvre une fenêtre de détail (synopsis, récapitulatif façon carte : année, box-office, studio, classification, score, pays, réalisateur, producteurs et acteurs avec photos ; boutons d'ajout, date / note / commentaire pour « Vu »). Pour une série, la fenêtre permet de choisir la saison, de voir la liste des épisodes et de cocher ceux déjà vus (ou « toute la saison », « tout jusqu'à cette saison ») dès l'ajout. Une option « cocher aussi tous les épisodes précédents » (saisons et épisodes d'avant) existe aussi sur la fiche d'une série. Sur chaque résultat : « Ajouter à voir », « Vu », et un indicateur s'il est déjà dans ma bibliothèque. Bouton **« Ajouter un titre manuellement »**.
 3. **Ma bibliothèque** — grille d'affiches de mes titres.
-   - Filtres : type (film / série / animé), statut, vu / pas vu.
+   - Filtres : type (film / série / animé), statut, vu / pas vu, sélection « Coups de cœur ».
    - Tris : ma note, note TMDB, dernier visionnage, date d'ajout, titre, année.
 4. **Fiche titre** — affiche, titre, année, synopsis, durée, note TMDB, statut (modifiable), notes libres.
    - Film : liste de mes visionnages (date, note, commentaire), temps écoulé entre deux visionnages, bouton « Vu ».
@@ -134,7 +135,7 @@ En-tête commun : navigation + barre de recherche. Pied de page : logo et mentio
 ### Export Excel (.xlsx), lisible par un humain
 
 - **Feuille « Historique »** : une ligne par visionnage — Titre, Année, Type, Date (jj/mm/aaaa), Saison, Épisode, Note, Commentaire, Statut actuel du titre.
-- **Feuille « Mes titres »** : une ligne par titre — Titre, Année, Type, Statut, Vu avant, Note série, Notes, Durée (min) (colonne ajoutée : nécessaire pour ne pas perdre la durée des titres manuels).
+- **Feuille « Mes titres »** : une ligne par titre — Titre, Année, Type, Statut, Vu avant, Coup de cœur, Note série, Notes, Durée (min) (colonne ajoutée : nécessaire pour ne pas perdre la durée des titres manuels).
 - Les images ajoutées à la main (`image_perso`) ne sont pas dans l'export.
 - Les titres « vu avant » apparaissent dans l'historique avec « Vu avant » à la place de la date.
 - Une seule colonne technique, **en dernier** : `Identifiant` (ex. `tmdb:serie:1399`, `tmdb:film:603` ou `manuel:xxxx`), indispensable pour l'import.

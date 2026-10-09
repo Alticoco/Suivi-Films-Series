@@ -26,7 +26,9 @@
   /* Accent : la menthe n'apparaît que pour les états positifs, l'onglet actif et le focus */
   --couleur-menthe: #3ad9a8;
   --couleur-menthe-douce: rgba(58, 217, 168, 0.12);
-  --couleur-erreur: #f87171;        /* erreurs de saisie et actions destructrices */
+  --couleur-menthe-forte: rgba(58, 217, 168, 0.22); /* fond d'une puce de filtre incluse */
+  --couleur-erreur: #f87171;        /* erreurs de saisie, actions destructrices, filtres exclus */
+  --couleur-erreur-douce: rgba(248, 113, 113, 0.14);
 
   /* Polices */
   --police-texte: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;

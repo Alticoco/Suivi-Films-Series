@@ -374,6 +374,91 @@ function explorer(p) {
   };
 }
 
+// ---------- Rechercher par acteur ou réalisateur ----------
+// personnes(texte) → les personnes qui portent ce nom (pour choisir la bonne)
+function personnes(texte) {
+  const d = appeler("/search/person", { query: texte, language: "fr-FR", include_adult: "false", page: 1 });
+  return ((d && d.results) || []).slice(0, 8).map((p) => ({
+    id: String(p.id),
+    nom: p.name || "",
+    photo: p.profile_path || null,
+    metier: p.known_for_department === "Directing" ? "realisateur" : p.known_for_department === "Acting" ? "acteur" : "autre",
+    connu_pour: (p.known_for || []).slice(0, 3).map((k) => k.title || k.name).filter((x) => x),
+  }));
+}
+
+// Genres de type « émission » (talk-show, info, télé-réalité) : on n'y compte pas une apparition comme un rôle
+const GENRES_EMISSIONS = [10767, 10763, 10764];
+
+// filmographie(parametres) → une page de titres d'une personne, avec les mêmes filtres que explorer()
+// parametres : personne_id, personne_role (acteur | realisateur), type, genres_inclus / genres_exclus,
+// annee_min, annee_max, tri, page.
+//  - acteur : rôles principaux (les 5 premiers du casting d'un film ; au moins 5 épisodes pour une série)
+//  - réalisateur : titres qu'il a réalisés
+function filmographie(p) {
+  const id = String(p.personne_id || "");
+  if (!/^[0-9]+$/.test(id)) throw new Error("Identifiant de personne invalide");
+  const d = appeler(`/person/${id}/combined_credits`, { language: "fr-FR" });
+  const acteur = p.personne_role !== "realisateur";
+  const brut = !d ? [] : acteur
+    ? (d.cast || []).filter((c) => {
+      if (/\b(self|himself|herself|soi-m)/i.test(c.character || "")) return false;       // apparition « en tant que soi-même »
+      if (c.media_type === "movie") return c.order !== undefined && c.order < 5;
+      return (c.episode_count || 0) >= 5 && !(c.genre_ids || []).some((g) => GENRES_EMISSIONS.indexOf(g) !== -1);
+    })
+    : (d.crew || []).filter((c) => c.job === "Director");
+
+  const vus = {};
+  const inclus = liste(p.genres_inclus);
+  const exclus = liste(p.genres_exclus);
+  const anneeMin = parseInt(p.annee_min, 10) || 0;
+  const anneeMax = parseInt(p.annee_max, 10) || 0;
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+
+  const gardes = brut.filter((c) => {
+    if (c.media_type !== "movie" && c.media_type !== "tv") return false;
+    const cle = `${c.media_type}:${c.id}`;
+    if (vus[cle]) return false;          // un même titre n'apparaît qu'une fois
+    vus[cle] = true;
+    if (p.type === "film" && c.media_type !== "movie") return false;
+    if (p.type === "serie" && c.media_type !== "tv") return false;
+
+    const colonne = c.media_type === "movie" ? 2 : 3;
+    const genres = c.genre_ids || [];
+    for (const cleGenre of inclus) {
+      const gid = (GENRES.find((g) => g[0] === cleGenre) || [])[colonne];
+      if (!gid || genres.indexOf(gid) === -1) return false;
+    }
+    for (const cleGenre of exclus) {
+      const gid = (GENRES.find((g) => g[0] === cleGenre) || [])[colonne];
+      if (gid && genres.indexOf(gid) !== -1) return false;
+    }
+    const date = c.media_type === "movie" ? c.release_date : c.first_air_date;
+    const an = annee(date) || 0;
+    if (anneeMin && an < anneeMin) return false;
+    if (anneeMax && an > anneeMax) return false;
+    if (p.tri === "recents" && (!date || date > aujourdhui)) return false; // pas de titres pas encore sortis
+    return true;
+  });
+
+  if (p.tri === "mieux_notes") {
+    gardes.sort((a, b) => (b.vote_count >= 100 ? b.vote_average : 0) - (a.vote_count >= 100 ? a.vote_average : 0));
+  } else if (p.tri === "recents") {
+    gardes.sort((a, b) => ((b.release_date || b.first_air_date || "") > (a.release_date || a.first_air_date || "") ? 1 : -1));
+  } else {
+    gardes.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+  }
+
+  const parPage = 20;
+  const page = Math.max(1, p.page || 1);
+  return {
+    page: page,
+    total_pages: Math.max(1, Math.ceil(gardes.length / parPage)),
+    resultats: gardes.slice((page - 1) * parPage, page * parPage)
+      .map((c) => resultatNeutre(c, c.media_type === "movie" ? "film" : "serie")),
+  };
+}
+
 // saisons(idSource) → structure d'une série (liste des saisons)
 function saisons(idSource) {
   const d = details("serie", idSource);
@@ -403,4 +488,4 @@ function episodes(idSource, saison) {
   }));
 }
 
-module.exports = { rechercher, decouvrir, explorer, filtresDisponibles, codesDe, details, saisons, episodes };
+module.exports = { rechercher, decouvrir, explorer, filtresDisponibles, codesDe, personnes, filmographie, details, saisons, episodes };

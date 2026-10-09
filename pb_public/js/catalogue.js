@@ -441,7 +441,7 @@ const categorieChoisie = CATEGORIES.some(([cle]) => cle === parametres.get("cate
 // ---------- Filtres : inclure / exclure ----------
 // Les choix se lisent dans l'adresse de la page (?type=film&gi=drame&ge=horreur&pe=asie…) :
 //   gi / ge = genres inclus / exclus · pi / pe = pays ou régions inclus / exclus
-// Chaque « puce » a 3 états : neutre → inclus (+) → exclu (−) → neutre.
+// Chaque « puce » a 3 états : neutre → inclus (vert) → exclu (rouge) → neutre.
 const lireListeUrl = (cle) => (parametres.get(cle) || "").split(",").filter((x) => x);
 const etatDepuisUrl = (inclus, exclus) => {
   const etat = {};
@@ -456,8 +456,12 @@ const filtres = {
   anneeMin: (parametres.get("amin") || "").replace(/\D/g, "").slice(0, 4),
   anneeMax: (parametres.get("amax") || "").replace(/\D/g, "").slice(0, 4),
   tri: ["mieux_notes", "recents"].includes(parametres.get("tri")) ? parametres.get("tri") : "populaires",
+  // Acteur ou réalisateur choisi : { id, nom, role: "acteur" | "realisateur" } (ou null)
+  personne: /^[0-9]+$/.test(parametres.get("pers") || "")
+    ? { id: parametres.get("pers"), nom: (parametres.get("pnom") || "").slice(0, 80), role: parametres.get("prole") === "realisateur" ? "realisateur" : "acteur" }
+    : null,
 };
-const filtresActifs = !texteRecherche && ["type", "gi", "ge", "pi", "pe", "amin", "amax", "tri"].some((cle) => parametres.has(cle));
+const filtresActifs = !texteRecherche && ["type", "gi", "ge", "pi", "pe", "amin", "amax", "tri", "pers"].some((cle) => parametres.has(cle));
 
 const TRIS = { populaires: "Les plus populaires", mieux_notes: "Les mieux notés", recents: "Les plus récents" };
 const cleDe = (etat, valeur) => Object.keys(etat).filter((cle) => etat[cle] === valeur).join(",");
@@ -468,6 +472,7 @@ function parametresExplorer(page) {
   [["genres_inclus", cleDe(filtres.genres, 1)], ["genres_exclus", cleDe(filtres.genres, -1)],
     ["pays_inclus", cleDe(filtres.pays, 1)], ["pays_exclus", cleDe(filtres.pays, -1)],
     ["annee_min", filtres.anneeMin], ["annee_max", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
+  if (filtres.personne) { p.set("personne_id", filtres.personne.id); p.set("personne_role", filtres.personne.role); }
   return p.toString();
 }
 
@@ -478,11 +483,13 @@ function adresseFiltres() {
   [["gi", cleDe(filtres.genres, 1)], ["ge", cleDe(filtres.genres, -1)], ["pi", cleDe(filtres.pays, 1)], ["pe", cleDe(filtres.pays, -1)],
     ["amin", filtres.anneeMin], ["amax", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
   if (filtres.tri !== "populaires") p.set("tri", filtres.tri);
+  if (filtres.personne) { p.set("pers", filtres.personne.id); p.set("pnom", filtres.personne.nom); p.set("prole", filtres.personne.role); }
   return p.toString() ? `catalogue.html?${p}` : "catalogue.html";
 }
 
 const nombreFiltres = () => Object.keys(filtres.genres).length + Object.keys(filtres.pays).length
-  + (filtres.type !== "tous" ? 1 : 0) + (filtres.anneeMin || filtres.anneeMax ? 1 : 0) + (filtres.tri !== "populaires" ? 1 : 0);
+  + (filtres.type !== "tous" ? 1 : 0) + (filtres.anneeMin || filtres.anneeMax ? 1 : 0) + (filtres.tri !== "populaires" ? 1 : 0)
+  + (filtres.personne ? 1 : 0);
 
 // Une phrase qui résume les filtres actifs (affichée au-dessus de la grille)
 function resumeFiltres(choix) {
@@ -490,6 +497,7 @@ function resumeFiltres(choix) {
   const liste = (a, b) => [a, b].join(",").split(",").filter((x) => x).map(nom);
   const parties = [];
   if (filtres.type !== "tous") parties.push(filtres.type === "film" ? "films" : "séries");
+  if (filtres.personne) parties.push(`${filtres.personne.role === "realisateur" ? "réalisés par" : "avec"} ${filtres.personne.nom}`);
   const inclus = liste(cleDe(filtres.genres, 1), cleDe(filtres.pays, 1));
   const exclus = liste(cleDe(filtres.genres, -1), cleDe(filtres.pays, -1));
   if (inclus.length) parties.push(`avec : ${inclus.join(", ")}`);
@@ -505,8 +513,8 @@ function creerPuce(libelle, etat, cle, apresChangement) {
     const valeur = etat[cle] || 0;
     puce.className = `puce${valeur === 1 ? " puce-incluse" : valeur === -1 ? " puce-exclue" : ""}`;
     puce.setAttribute("aria-pressed", String(valeur !== 0));
-    puce.title = valeur === 0 ? "Clique pour inclure" : valeur === 1 ? "Inclus : clique pour exclure" : "Exclu : clique pour retirer";
-    puce.replaceChildren(...(valeur === 1 ? [icone("plus")] : valeur === -1 ? [icone("minus")] : []), libelle);
+    puce.title = valeur === 0 ? "Clique pour inclure (vert)" : valeur === 1 ? "Inclus (vert) : clique pour exclure" : "Exclu (rouge) : clique pour retirer";
+    puce.replaceChildren(libelle);
   };
   puce.addEventListener("click", () => {
     const suivante = { 0: 1, 1: -1, "-1": 0 }[etat[cle] || 0]; // neutre → inclus → exclu → neutre
@@ -516,6 +524,59 @@ function creerPuce(libelle, etat, cle, apresChangement) {
   });
   dessiner();
   return puce;
+}
+
+// Champ « Acteur ou réalisateur » : on tape un nom, on choisit la bonne personne, puis son rôle
+function creerChampPersonne(majCompteur) {
+  const saisie = el("input", { type: "search", placeholder: "Nom d'un acteur ou d'un réalisateur…", "aria-label": "Nom d'une personne" });
+  const boutonChercher = el("button", { type: "button" }, icone("search"), "Chercher");
+  const trouvees = el("div", { class: "personnes-trouvees" });
+  const choisie = el("div", { class: "personne-choisie" });
+
+  function dessinerChoix() {
+    choisie.replaceChildren();
+    const p = filtres.personne;
+    if (!p) return;
+    const roles = champsRadio("role_personne", [["acteur", "Acteur (rôles principaux)"], ["realisateur", "Réalisateur"]], p.role, "Rôle recherché");
+    roles.addEventListener("change", (e) => { p.role = e.target.value; });
+    choisie.append(
+      el("p", { class: "personne-etiquette" }, icone("check"), el("strong", {}, p.nom),
+        el("button", { type: "button", class: "lien", onclick: () => { filtres.personne = null; dessinerChoix(); majCompteur(); } }, "Retirer")),
+      roles);
+  }
+
+  async function chercher() {
+    const texte = saisie.value.trim();
+    if (!texte) return;
+    trouvees.replaceChildren(el("p", { class: "discret" }, "Recherche…"));
+    try {
+      const liste = await source(`personnes?q=${encodeURIComponent(texte)}`);
+      trouvees.replaceChildren(...(liste.length ? liste.map((p) => {
+        const adresse = urlAffiche(p.photo, "w185");
+        return el("button", {
+          type: "button", class: "personne-trouvee",
+          onclick: () => {
+            filtres.personne = { id: p.id, nom: p.nom, role: p.metier === "realisateur" ? "realisateur" : "acteur" };
+            trouvees.replaceChildren();
+            saisie.value = "";
+            dessinerChoix();
+            majCompteur();
+          },
+        },
+          adresse ? el("img", { class: "personne-photo", src: adresse, alt: "", loading: "lazy" }) : el("span", { class: "personne-photo personne-initiales" }, initiales(p.nom)),
+          el("span", { class: "personne-trouvee-texte" }, el("strong", {}, p.nom),
+            el("span", { class: "discret" }, [p.metier === "realisateur" ? "Réalisateur" : p.metier === "acteur" ? "Acteur" : "", ...p.connu_pour.slice(0, 2)].filter((x) => x).join(" · "))));
+      }) : [el("p", { class: "discret" }, "Personne introuvable. Vérifie l'orthographe.")]));
+    } catch (erreur) {
+      trouvees.replaceChildren(el("p", { class: "ko" }, erreur.message));
+    }
+  }
+  boutonChercher.addEventListener("click", chercher);
+  saisie.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); chercher(); } });
+
+  dessinerChoix();
+  return el("div", { class: "champ champ-personne" }, el("label", {}, "Acteur ou réalisateur"),
+    el("div", { class: "recherche-personne" }, saisie, boutonChercher), trouvees, choisie);
 }
 
 function construirePanneauFiltres(choix) {
@@ -534,8 +595,9 @@ function construirePanneauFiltres(choix) {
   choixTri.addEventListener("change", () => { filtres.tri = choixTri.value; majCompteur(); });
 
   const corps = el("div", { class: "filtres-corps" },
-    el("p", { class: "discret" }, "Clique une fois sur une puce pour l'inclure (+), deux fois pour l'exclure (−), trois fois pour la retirer."),
+    el("p", { class: "discret" }, "Clique une fois sur une puce pour l'inclure (elle devient verte), deux fois pour l'exclure (rouge), trois fois pour la retirer."),
     radiosType,
+    creerChampPersonne(majCompteur),
     el("div", { class: "champ" }, el("label", {}, "Genres (le titre doit avoir tous les genres inclus)"), groupePuces(choix.genres, filtres.genres),
       el("p", { class: "discret" }, "Horreur, Thriller, Romance, Histoire et Musique n'existent que pour les films : les inclure masque les séries.")),
     el("div", { class: "champ" }, el("label", {}, "Régions (au moins une des régions incluses)"), groupePuces(choix.regions, filtres.pays)),

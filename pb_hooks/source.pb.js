@@ -6,6 +6,7 @@
 //   GET /api/source/rechercher?q=texte&page=1
 //   GET /api/source/decouvrir?categorie=tendances&page=1   (se balader dans le catalogue)
 //   GET /api/source/explorer?type=…&genres_inclus=…&pays_exclus=…  (parcourir avec des filtres)
+//   GET /api/source/personnes?q=nom   (acteurs, réalisateurs...) ; explorer accepte personne_id + personne_role
 //   GET /api/source/filtres, GET /api/source/pays?ids=film:603,…
 //   GET /api/source/details/{format}/{id}      format = film | serie
 //   GET /api/source/saisons/{id}
@@ -45,9 +46,17 @@ routerAdd("GET", "/api/source/explorer", (e) => {
     pays_inclus: q.get("pays_inclus") || "", pays_exclus: q.get("pays_exclus") || "",
     annee_min: q.get("annee_min") || "", annee_max: q.get("annee_max") || "",
     tri: q.get("tri") || "populaires",
+    personne_id: q.get("personne_id") || "", personne_role: q.get("personne_role") || "acteur",
     page: Math.max(1, Math.min(500, parseInt(q.get("page") || "1", 10) || 1)),
   };
   return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.explorer(parametres));
+});
+
+// Chercher une personne : GET /api/source/personnes?q=keanu
+routerAdd("GET", "/api/source/personnes", (e) => {
+  const texte = (e.request.url.query().get("q") || "").trim();
+  if (!texte) return e.json(400, { message: "Paramètre q manquant" });
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.personnes(texte));
 });
 
 // Pays de plusieurs titres : GET /api/source/pays?ids=film:603,serie:1399
