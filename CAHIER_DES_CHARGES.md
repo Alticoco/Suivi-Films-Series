@@ -79,11 +79,12 @@ Le reste du code ne connaît pas TMDB. Plus tard, on pourra ajouter TVmaze, AniL
 | `commentaire` | texte | films uniquement, facultatif |
 | `avant` | booléen | « vu avant, date inconnue » : épisode vu avant la création du site, sans date (permet de dire « vu jusqu'à tel épisode » sans prétendre avoir tout vu) |
 | `ajoute_le` | date (automatique) | quand la ligne a été enregistrée |
+| `passage` | nombre | 1 (ou vide) = première fois, 2 = premier revisionnage d'une série, etc. |
 
 - Convention technique : PocketBase stocke un nombre vide comme `0`. Une note `0` (ou `note_serie`, `annee`, `duree_min` à `0`) signifie donc « pas de note / inconnu ». Pour un film, `saison` et `episode` valent aussi `0` ; un épisode a toujours `episode` ≥ 1 (la saison `0` correspond aux épisodes spéciaux).
 - **Film** : une ligne par visionnage. Revoir un film = une nouvelle ligne avec une nouvelle date (historique des revisionnages, temps écoulé entre deux visionnages affiché sur la fiche).
 - **Série / animé** : une ligne par épisode coché. La « saison 0 » de TMDB (making-of, résumés, interviews, documentaires…) est présentée en dernier sous le nom « Bonus », repliée, et ne compte pas dans la progression. « Toute la saison » crée une ligne par épisode, avec la même date.
-- V1 : un épisode ne peut être coché qu'une fois (pas de revisionnage de série).
+- Un épisode ne peut être coché qu'une fois **par passage**. « Revoir la série » ouvre un nouveau passage (épisodes à recocher, progression et statut propres à ce passage) ; les passages précédents restent consultables. Un film revu = une nouvelle ligne datée (bouton « Revu »).
 
 ### `cache_source` — habillage TMDB
 
@@ -121,7 +122,7 @@ En-tête commun : navigation + barre de recherche (avec suggestions de titres pe
    - Séries en cours avec accès rapide « cocher l'épisode suivant ».
    - Bandeau de rappel de sauvegarde (voir §8).
    - Mini-stats : temps total passé en visionnage, nombre de titres vus cette année.
-2. **Catalogue** — par défaut, on se balade dans des listes TMDB (tendances, films à l'affiche, populaires, mieux notés) avec un défilement infini d'affiches ; la recherche dans TMDB (films et séries) affiche ses résultats de la même façon. Un panneau **Filtres** permet de chercher un acteur (rôles principaux) ou un réalisateur par son nom, d'inclure (vert) ou d'exclure (rouge) des genres, des pays et des régions (ex. sans l'Asie, sans les États-Unis, seulement la France), de choisir films / séries, une période d'années et un tri ; les pays sont vérifiés d'après les vrais pays de production. Les mêmes filtres (sauf acteur et tri) s'appliquent aussi à une recherche par nom, pour retirer ce qui n'intéresse pas. Le pays s'affiche sous chaque affiche. Un clic sur une affiche ouvre une fenêtre de détail (synopsis, récapitulatif façon carte : année, box-office, studio, classification (un clic explique les classifications d'âge), score, pays, réalisateur, producteurs et acteurs avec photos, et pour un film appartenant à une saga la liste des autres films de la saga (ex. Avatar 1, 2, 3) en un clic ; boutons d'ajout, date / note / commentaire pour « Vu »). Pour une série, la fenêtre permet de choisir la saison, de voir la liste des épisodes et de cocher ceux déjà vus (ou « toute la saison », « tout jusqu'à cette saison ») dès l'ajout. Une option « cocher aussi tous les épisodes précédents » (saisons et épisodes d'avant) existe aussi sur la fiche d'une série. Sur chaque résultat : « Ajouter à voir », « Vu », et un indicateur s'il est déjà dans ma bibliothèque. Bouton **« Ajouter un titre manuellement »**.
+2. **Catalogue** — par défaut, on se balade dans des listes TMDB (tendances, films à l'affiche, populaires, mieux notés) avec un défilement infini d'affiches ; la recherche dans TMDB (films et séries) affiche ses résultats de la même façon. Un panneau **Filtres** permet de chercher un acteur (rôles principaux) ou un réalisateur par son nom, d'inclure (vert) ou d'exclure (rouge) des genres, des pays et des régions (ex. sans l'Asie, sans les États-Unis, seulement la France), de choisir films / séries, une période d'années et un tri ; les pays sont vérifiés d'après les vrais pays de production. Les mêmes filtres (sauf acteur et tri) s'appliquent aussi à une recherche par nom, pour retirer ce qui n'intéresse pas. Le pays s'affiche sous chaque affiche. Un clic sur une affiche ouvre une fenêtre de détail (synopsis, récapitulatif façon carte : année, box-office, studio, classification (un clic explique les classifications d'âge), score, pays, réalisateur, producteurs et acteurs avec photos (cliquables : un clic ouvre le catalogue avec tous les titres de la personne, y compris depuis la fiche d'un titre), et pour un film appartenant à une saga la liste des autres films de la saga (ex. Avatar 1, 2, 3) en un clic ; boutons d'ajout, date / note / commentaire pour « Vu »). Pour une série, la fenêtre permet de choisir la saison, de voir la liste des épisodes et de cocher ceux déjà vus (ou « toute la saison », « tout jusqu'à cette saison ») dès l'ajout. Une option « cocher aussi tous les épisodes précédents » (saisons et épisodes d'avant) existe aussi sur la fiche d'une série. Sur chaque résultat : « Ajouter à voir », « Vu », et un indicateur s'il est déjà dans ma bibliothèque. Bouton **« Ajouter un titre manuellement »**.
 3. **Ma bibliothèque** — grille d'affiches de mes titres.
    - Filtres : type (film / série / animé), statut, vu / pas vu, sélection « Coups de cœur ».
    - Tris : ma note, note TMDB, dernier visionnage, date d'ajout, titre, année.
@@ -130,7 +131,7 @@ En-tête commun : navigation + barre de recherche (avec suggestions de titres pe
    - Série : saisons dépliables avec cases à cocher par épisode et bouton « toute la saison », progression (ex. S2E5), note de la série.
    - Possibilité de remplacer l'image, de supprimer le titre (avec confirmation).
 5. **Journal** — tous mes visionnages par ordre chronologique inverse, regroupés par mois.
-6. **Statistiques** (simple) — temps total passé (films + épisodes), nombre de films / séries / animés vus, visionnages par année.
+6. **Statistiques** — deux vues : « Cette année » et « Total » (toutes les années + ce qui a été vu avant, sans date, durée estimée). Temps passé (films + épisodes), nombre de films / séries / animés vus, titres revus, coups de cœur (avec leurs affiches), visionnages par année.
 7. **Sauvegarde** — export, import, date du dernier export.
 
 ## 8. Sauvegarde : export et import
@@ -178,8 +179,7 @@ Chaque étape se termine par un test de ma part et un commit.
 
 ## 11. Hors V1 (versions suivantes)
 
-- **V1.1** : notes IMDb, Rotten Tomatoes et Metacritic via OMDb (clé gratuite, données en cache).
+- ~~Notes IMDb, Rotten Tomatoes et Metacritic via OMDb~~ : abandonné, la note TMDB suffit.
 - Listes « à voir une fois dans sa vie » (meilleurs films, meilleures séries).
-- Revisionnage complet d'une série.
 - Sources alternatives : TVmaze, AniList, Wikidata.
 - Accès depuis le téléphone.

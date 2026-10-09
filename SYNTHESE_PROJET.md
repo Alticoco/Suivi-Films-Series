@@ -6,7 +6,7 @@
 ## 1. Le projet en deux phrases
 Site perso, un seul utilisateur, qui tourne **en local sur Windows** (PocketBase + HTML/CSS/JS simples, sans framework) pour suivre films, séries et animés. Les données de l'utilisateur restent chez lui (base `pb_data/`), exportables en Excel ; TMDB ne sert qu'à « habiller » les fiches (affiches, synopsis, distribution…).
 
-- Dépôt : https://github.com/Alticoco/Suivi-Films-Series (branche `main`, PR #1 à #13 fusionnés, aucun ouvert).
+- Dépôt : https://github.com/Alticoco/Suivi-Films-Series (branche `main`, PR #1 à #14 fusionnés ; ouverts, non fusionnés : #15 design, #16 personnes cliquables + revisionnage, #17 statistiques « Total » + cahier).
 - Dossier : `E:\Projet IA\Suivi Films & Series`. Site : http://127.0.0.1:8090 — admin : http://127.0.0.1:8090/_/.
 - L'utilisateur est **débutant** : toujours expliquer simplement, **en français** (interface, commentaires du code, messages).
 
@@ -19,7 +19,7 @@ Site perso, un seul utilisateur, qui tourne **en local sur Windows** (PocketBase
 ## 3. Architecture (où est quoi)
 ```
 pb_public/            le site : index (tableau de bord), catalogue, bibliotheque, fiche, journal, statistiques, sauvegarde (.html)
-  css/variables.css   TOUTES les couleurs/polices/espacements (fond noir pur #000000, accent menthe, rouge « fauteuil de cinéma » pour les onglets, rouge d'erreur)
+  css/variables.css   TOUTES les couleurs/polices/espacements (fond noir pur #000000, surfaces bordeaux sombre à partir du PR #15, accent menthe, rouge « fauteuil de cinéma » `--couleur-onglet` pour les onglets et la loupe, rouge d'erreur, `--hauteur-controle` commune aux boutons de filtre)
   css/style.css       styles (tout en variables)
   js/commun.js        en-tête + recherche avec menu « Filtrer » (Tout / Films / Séries / Acteurs / Réalisateurs / Producteurs) et suggestions titres + personnes, pied TMDB, utilitaires (el, source, pbListe, pbCreer…)
   js/formulaires.js   fenêtres, étoiles /10 (demi-étoiles), champs « Vu »
@@ -44,7 +44,9 @@ Collections : `titres` (dont `format_source`, `coup_de_coeur`, `vu_avant`), `vis
 - « Vu avant » : titre entier (`titres.vu_avant`) **ou** épisodes isolés sans date (`visionnages.avant`) ; ils comptent dans la progression, pas dans journal/temps/années.
 - Filtres de pays : **stricts** d'après les vrais pays de production (inclure = au moins un ; exclure = aucun, coproductions comprises). Les genres inclus se cumulent (tous) ; Horreur/Thriller/Romance/Histoire/Musique n'existent que pour les films.
 - **Bibliothèque** : filtres avancés côté navigateur (genres inclus/exclus, régions/pays inclus/exclus, années), même principe de puces vert/rouge que le catalogue (`creerPuce` est dans `commun.js`). Les genres proposés sont ceux de MES titres (lus dans le cache TMDB via `resumes`, qui renvoie aussi `genres` et `pays` ; les fiches anciennes sans pays sont rechargées une à une). Adresse : `gi/ge/pi/pe/amin/amax`.
-- **Statistiques** : deux vues, « Cette année » (visionnages datés de l'année) et « Toute ma vie » (`?vue=total` : tout, y compris le « vu avant » sans date, dont la durée est estimée : film = 1 fois, série = épisodes diffusés hors spéciaux non cochés un par un). Le serveur renvoie `cette_annee` et `total` ; les anciennes clés (`minutes_total`, `titres_vus`…) restent pour l'accueil.
+- **Revisionnage** (PR #16) : champ `visionnages.passage` (vide/0/1 = première fois, 2 = revisionnage n°1…) ; un épisode est unique par (titre, saison, épisode, passage) ; `serie.js` calcule la progression pour un passage (par défaut le plus récent) ; bouton « Revoir la série » + onglets de passage sur la fiche série ; l'export a une colonne « Passage » avant « Identifiant ». Un film revu = un nouveau visionnage (bouton « Revu »).
+- **Personnes cliquables** (PR #16) : la fiche en cache (version 4) garde l'`id` des personnes ; un clic mène à `catalogue.html?pers=ID&pnom=…&prole=acteur|realisateur|producteur`.
+- **Statistiques** : deux vues, « Cette année » (visionnages datés de l'année) et « Total » (`?vue=total` : tout, y compris le « vu avant » sans date, dont la durée est estimée : film = 1 fois, série = épisodes diffusés hors spéciaux non cochés un par un). Le serveur renvoie `cette_annee` et `total` (avec `revus` = titres revus) ; la page affiche aussi un récapitulatif (titres revus, coups de cœur avec affiches) et les visionnages par année dans les deux vues ; les anciennes clés (`minutes_total`, `titres_vus`…) restent pour l'accueil.
 - Export Excel : feuilles « Historique » et « Mes titres », colonne technique « Identifiant » en dernier (`tmdb:serie:1399`, `manuel:<id>`).
 
 ## 5. Ce qui a été fait (chronologie résumée)
@@ -64,5 +66,5 @@ Collections : `titres` (dont `format_source`, `coup_de_coeur`, `vu_avant`), `vis
 ## 7. Idées non réalisées / à proposer si l'utilisateur le souhaite
 - Supprimer les anciennes branches fusionnées (locales et sur GitHub).
 - Ajouter une vraie CI GitHub (vérification de syntaxe) si l'utilisateur voit « CI » comme manquant.
-- V1.1 du cahier : notes IMDb/Rotten Tomatoes via OMDb, listes « à voir une fois dans sa vie », revisionnage complet d'une série, sources alternatives (TVmaze, AniList, Wikidata), accès téléphone.
+- V1.1 du cahier : listes « à voir une fois dans sa vie », sources alternatives (TVmaze, AniList, Wikidata), accès téléphone. (Les notes IMDb/Rotten Tomatoes ont été abandonnées : la note TMDB suffit.)
 - Séries ajoutées manuellement : pas de liste d'épisodes (seulement statut et note).
