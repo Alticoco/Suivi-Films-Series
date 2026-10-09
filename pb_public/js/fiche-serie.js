@@ -9,8 +9,12 @@
 let saisonsSerie = null;           // [{numero, nom, nb_episodes, episodes: [...]}]
 const saisonsOuvertes = new Set(); // numéros des saisons dépliées
 // (La logique de calcul — cleEpisode, estDiffuse, calculerProgression... — est dans serie.js)
-const episodesVus = () => episodesVusDe(visionnages);
-const progressionActuelle = () => calculerProgression(saisonsSerie, visionnages);
+// Passage affiché (1 = première fois, 2 = premier revisionnage...). null = le plus récent.
+// Un nouveau passage vide n'existe qu'à l'écran tant qu'aucun épisode n'y est coché.
+let passageAffiche = null;
+const passageCourant = () => passageAffiche || passageActuelDe(visionnages);
+const episodesVus = () => episodesVusDe(visionnages, passageCourant());
+const progressionActuelle = () => calculerProgression(saisonsSerie, visionnages, passageCourant());
 
 // ---------- Statuts automatiques (cahier des charges, section 6) ----------
 async function appliquerStatutAuto(coche) {
@@ -20,7 +24,10 @@ async function appliquerStatutAuto(coche) {
     // Cocher un épisode : en cours, ou terminé si tous les épisodes diffusés sont vus
     statut = p.complet ? "termine" : "en_cours";
   } else if (p.total === 0) {
-    if (["en_cours", "termine"].includes(statut) && !titre.vu_avant) statut = "a_voir";
+    if (passageCourant() > 1) {
+      // Revisionnage vidé : on retombe sur l'état du passage précédent
+      statut = calculerProgression(saisonsSerie, visionnages, passageCourant() - 1).complet ? "termine" : "en_cours";
+    } else if (["en_cours", "termine"].includes(statut) && !titre.vu_avant) statut = "a_voir";
   } else if (statut === "termine" && !p.complet) {
     statut = "en_cours";
   }
@@ -41,7 +48,7 @@ function dateDeCochage() {
 let cocherSansDate = false;
 
 async function cocherEpisode(saison, episode) {
-  const ligne = await cocherEpisodeSerie(titre.id, saison, episode, dateDeCochage(), cocherSansDate);
+  const ligne = await cocherEpisodeSerie(titre.id, saison, episode, dateDeCochage(), cocherSansDate, passageCourant());
   visionnages.push(ligne);
 }
 
@@ -120,6 +127,36 @@ function ouvrirDateEpisode(saison, episode) {
   });
 }
 
+// ---------- Revisionnage ----------
+// « Revoir la série » ouvre un nouveau passage : tous les épisodes redeviennent à cocher,
+// et les passages précédents restent consultables dans leurs onglets.
+function confirmerRevisionnage() {
+  const prochain = passageActuelDe(visionnages) + 1;
+  ouvrirDialogue({
+    titre: `Revoir « ${titre.titre} » ?`,
+    libelleValider: "Commencer le revisionnage",
+    remplir: (formulaire) => formulaire.append(el("p", {},
+      `Un passage n°${prochain} commence : tu recoches les épisodes au fur et à mesure. Tes visionnages précédents sont conservés.`)),
+    valider: async () => {
+      passageAffiche = prochain;
+      if (titre.statut === "termine") { await modifierTitre({ statut: "en_cours" }); const select = document.getElementById("statut"); if (select) select.value = titre.statut; }
+      dessinerSerie();
+    },
+  });
+}
+
+// Onglets « Première fois / Revisionnage n°2... » (seulement s'il y a plus d'un passage)
+function ongletsPassages() {
+  const dernier = Math.max(passageActuelDe(visionnages), passageCourant());
+  if (dernier < 2) return null;
+  const nomDe = (n) => (n === 1 ? "Première fois" : `Revisionnage n°${n - 1}`);
+  return el("nav", { class: "categories onglets-passages", "aria-label": "Passages" },
+    Array.from({ length: dernier }, (_, i) => i + 1).map((n) => el("a", {
+      href: "#", class: `pastille-categorie${n === passageCourant() ? " active" : ""}`, "aria-current": n === passageCourant() ? "true" : null,
+      onclick: (e) => { e.preventDefault(); passageAffiche = n; dessinerSerie(); },
+    }, nomDe(n))));
+}
+
 // ---------- Note de la série ----------
 function blocNoteSerie() {
   // La note s'enregistre toute seule dès qu'on change les étoiles
@@ -178,7 +215,8 @@ function dessinerSerie() {
   const resume = [];
   if (p.dernier) resume.push(`Progression : S${p.dernier.saison}E${p.dernier.episode}`);
   resume.push(`${p.diffusesVus}/${p.diffuses} épisodes diffusés vus`);
-  if (titre.vu_avant) resume.push("vue avant la création du site");
+  if (titre.vu_avant && passageCourant() === 1) resume.push("vue avant la création du site");
+  if (passageCourant() > 1) resume.push(`revisionnage n°${passageCourant() - 1}`);
 
   const boutonSuivant = el("button", { type: "button", class: "principal", disabled: !p.prochain, onclick: async () => {
     if (p.prochain) await basculerEpisode(p.prochain.saison, p.prochain.episode, true);
@@ -194,10 +232,16 @@ function dessinerSerie() {
     creerOptionPrecedents(),
     boutonSuivant);
 
+  // « Revoir la série » : possible quand le passage affiché est le dernier et qu'il est entamé (ou que la série est « vue avant »)
+  const peutRevoir = passageCourant() === passageActuelDe(visionnages) && (p.total > 0 || titre.vu_avant);
+  const boutonRevoir = peutRevoir ? el("button", { type: "button", class: "contour", onclick: confirmerRevisionnage }, icone("clock"), "Revoir la série") : null;
+
   section.replaceChildren(
     el("h2", {}, "Épisodes"),
+    ongletsPassages(),
     el("p", { class: "progression" }, resume.join(" · ")),
     barre,
+    boutonRevoir,
     blocNoteSerie(),
     ...saisonsSerie.map((saison) => dessinerSaison(saison, p.vus)));
 }

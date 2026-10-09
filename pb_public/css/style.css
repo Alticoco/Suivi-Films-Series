@@ -636,3 +636,10 @@ button.saga-film:disabled { opacity: 1; cursor: default; }
 .menu-recherche-choix .discret { font-size: 0.72rem; }
 .suggestion-rond { border-radius: var(--rayon-pilule); width: 2.5rem; height: 2.5rem; }
 .personnes-resultats { margin-top: var(--espace-3); }
+
+/* Personnes cliquables (fiche et fenêtre de détail) : un clic ouvre tous leurs titres */
+a.personne-lien { color: inherit; border-radius: var(--rayon-moyen); padding: var(--espace-1); margin: calc(var(--espace-1) * -1); transition: background var(--duree-rapide) var(--courbe); }
+a.personne-lien:hover { text-decoration: none; background: var(--couleur-onglet-doux); }
+a.personne-lien:hover .personne-nom { color: #fff; text-decoration: underline; }
+
+.onglets-passages { margin-top: 0; }

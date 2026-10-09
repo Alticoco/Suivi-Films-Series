@@ -80,7 +80,7 @@ function afficher() {
     el("p", { class: "discret" }, sousTitre),
     infosSource,
     el("div", { class: "champ fiche-statut" }, el("label", { for: "statut" }, "Statut"), selectStatut),
-    film ? el("button", { type: "button", class: "principal", onclick: ouvrirVu }, icone("check"), "Vu") : null,
+    film ? el("button", { type: "button", class: "principal", onclick: ouvrirVu }, icone("check"), visionnages.length || titre.vu_avant ? "Revu" : "Vu") : null,
     el("div", { class: "champ" }, el("label", { for: "notes" }, "Mes notes"), champNotes, boutonNotes));
 
   const bas = [];
@@ -207,7 +207,7 @@ function sectionVisionnages() {
 // Bouton « Vu » : nouveau visionnage (ou marqueur « vu avant »)
 function ouvrirVu() {
   ouvrirDialogue({
-    titre: `Marquer comme vu : ${titre.titre}`,
+    titre: `${visionnages.length || titre.vu_avant ? "Marquer comme revu" : "Marquer comme vu"} : ${titre.titre}`,
     libelleValider: "Valider",
     remplir: (formulaire) => formulaire.append(champsVu()),
     valider: async (donnees) => {

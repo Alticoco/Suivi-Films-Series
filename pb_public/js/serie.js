@@ -27,14 +27,21 @@ async function chargerSaisons(idSource) {
   return saisons;
 }
 
-// Épisodes déjà cochés : Map "saison:episode" → ligne « visionnages »
-function episodesVusDe(visionnagesTitre) {
-  return new Map(visionnagesTitre.filter((v) => v.episode > 0).map((v) => [cleEpisode(v.saison, v.episode), v]));
+// ---------- Passages (revisionnage d'une série) ----------
+// Chaque épisode est coché une fois par « passage » : 1 = première fois, 2 = premier revisionnage...
+// (0 ou vide = 1). Sans précision, on travaille sur le passage le plus récent.
+const passageDe = (v) => (v.passage > 1 ? v.passage : 1);
+const passageActuelDe = (visionnagesTitre) => visionnagesTitre.reduce((max, v) => Math.max(max, passageDe(v)), 1);
+
+// Épisodes déjà cochés dans un passage : Map "saison:episode" → ligne « visionnages »
+function episodesVusDe(visionnagesTitre, passage) {
+  const voulu = passage || passageActuelDe(visionnagesTitre);
+  return new Map(visionnagesTitre.filter((v) => v.episode > 0 && passageDe(v) === voulu).map((v) => [cleEpisode(v.saison, v.episode), v]));
 }
 
 // Tout ce dont on a besoin pour la progression et les statuts.
-function calculerProgression(saisons, visionnagesTitre) {
-  const vus = episodesVusDe(visionnagesTitre);
+function calculerProgression(saisons, visionnagesTitre, passage) {
+  const vus = episodesVusDe(visionnagesTitre, passage);
   let diffuses = 0;
   let diffusesVus = 0;
   let prochain = null; // premier épisode diffusé, hors spéciaux, pas encore vu
@@ -58,8 +65,9 @@ function calculerProgression(saisons, visionnagesTitre) {
 
 // Coche un épisode et renvoie la nouvelle ligne : à la date donnée (aujourd'hui par défaut), ou
 // « vu avant, date inconnue » (avant = true : aucune date n'est enregistrée).
-function cocherEpisodeSerie(idTitre, saison, episode, date, avant) {
+function cocherEpisodeSerie(idTitre, saison, episode, date, avant, passage) {
   const donnees = { titre: idTitre, saison, episode };
+  if (passage > 1) donnees.passage = passage;
   if (avant) donnees.avant = true;
   else donnees.date = `${date || dateDuJour()} 00:00:00.000Z`;
   return pbCreer("visionnages", donnees);
