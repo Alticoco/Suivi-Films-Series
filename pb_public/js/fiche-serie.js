@@ -110,15 +110,13 @@ function ouvrirDateEpisode(saison, episode) {
 
 // ---------- Note de la série ----------
 function blocNoteSerie() {
-  const champ = el("input", {
-    type: "number", id: "note-serie", min: "0", max: "10", step: "0.5", placeholder: "facultative",
-    value: titre.note_serie ? String(titre.note_serie) : null,
-  });
-  const bouton = el("button", { type: "button", onclick: async () => {
-    try { await modifierTitre({ note_serie: Number(champ.value) || 0 }, "Note enregistrée."); }
+  // La note s'enregistre toute seule dès qu'on change les étoiles
+  const etoiles = champNoteEtoiles("note_serie", titre.note_serie);
+  etoiles.addEventListener("change", async () => {
+    try { await modifierTitre({ note_serie: Number(etoiles.querySelector("input").value) || 0 }, "Note enregistrée."); }
     catch (erreur) { toast(erreur.message, true); }
-  } }, "Enregistrer");
-  return el("div", { class: "note-serie" }, el("label", { for: "note-serie" }, "Ma note de la série (/10) "), champ, bouton);
+  });
+  return el("div", { class: "note-serie" }, el("span", { class: "etiquette" }, "Ma note de la série"), etoiles);
 }
 
 // ---------- Affichage ----------

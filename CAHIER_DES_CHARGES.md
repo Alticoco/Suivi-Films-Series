@@ -102,7 +102,7 @@ Un seul enregistrement : `dernier_export` (date).
 
 ### Bouton « Vu » (films)
 
-Ouvre une petite fenêtre : date (aujourd'hui par défaut), note /10 (facultative), commentaire (facultatif), et une case « Vu avant, date inconnue ». Validation possible sans rien remplir.
+Ouvre une petite fenêtre : date (aujourd'hui par défaut), note /10 (facultative, choisie en cliquant sur 10 étoiles, demi-étoiles possibles), commentaire (facultatif), et une case « Vu avant, date inconnue ». Validation possible sans rien remplir.
 
 ### Type animé
 
@@ -117,7 +117,7 @@ En-tête commun : navigation + barre de recherche. Pied de page : logo et mentio
    - Séries en cours avec accès rapide « cocher l'épisode suivant ».
    - Bandeau de rappel de sauvegarde (voir §8).
    - Mini-stats : temps total passé en visionnage, nombre de titres vus cette année.
-2. **Catalogue** — par défaut, on se balade dans des listes TMDB (tendances, films à l'affiche, populaires, mieux notés) avec un défilement infini d'affiches ; la recherche dans TMDB (films et séries) affiche ses résultats de la même façon. Un clic sur une affiche ouvre une fenêtre de détail (synopsis, note TMDB, durée, genres, boutons d'ajout, date / note / commentaire pour « Vu »). Sur chaque résultat : « Ajouter à voir », « Vu », et un indicateur s'il est déjà dans ma bibliothèque. Bouton **« Ajouter un titre manuellement »**.
+2. **Catalogue** — par défaut, on se balade dans des listes TMDB (tendances, films à l'affiche, populaires, mieux notés) avec un défilement infini d'affiches ; la recherche dans TMDB (films et séries) affiche ses résultats de la même façon. Un clic sur une affiche ouvre une fenêtre de détail (synopsis, note TMDB, durée, genres, boutons d'ajout, date / note / commentaire pour « Vu »). Pour une série, la fenêtre permet de choisir la saison, de voir la liste des épisodes et de cocher ceux déjà vus (ou « toute la saison », « tout jusqu'à cette saison ») dès l'ajout. Sur chaque résultat : « Ajouter à voir », « Vu », et un indicateur s'il est déjà dans ma bibliothèque. Bouton **« Ajouter un titre manuellement »**.
 3. **Ma bibliothèque** — grille d'affiches de mes titres.
    - Filtres : type (film / série / animé), statut, vu / pas vu.
    - Tris : ma note, note TMDB, dernier visionnage, date d'ajout, titre, année.

@@ -157,20 +157,6 @@ async function apercuImport(donnees) {
 }
 
 // ---------- 3. Application ----------
-// Exécute "travail" sur chaque élément, 4 à la fois, en signalant la progression.
-async function enParallele(elements, travail, progression) {
-  let suivant = 0;
-  let faits = 0;
-  const ouvrier = async () => {
-    while (suivant < elements.length) {
-      const element = elements[suivant++];
-      await travail(element);
-      progression(++faits, elements.length);
-    }
-  };
-  await Promise.all([ouvrier(), ouvrier(), ouvrier(), ouvrier()]);
-}
-
 function champsTitre(t) {
   const champs = {
     source: t.id.source, type: t.type, titre: t.titre, annee: t.annee, statut: t.statut,

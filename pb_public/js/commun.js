@@ -164,6 +164,21 @@ async function chargerStatistiques() {
   return stats;
 }
 
+// ---------- Traitement en parallèle ----------
+// Exécute "travail" sur chaque élément, 4 à la fois, en signalant la progression.
+async function enParallele(elements, travail, progression) {
+  let suivant = 0;
+  let faits = 0;
+  const ouvrier = async () => {
+    while (suivant < elements.length) {
+      const element = elements[suivant++];
+      await travail(element);
+      progression(++faits, elements.length);
+    }
+  };
+  await Promise.all([ouvrier(), ouvrier(), ouvrier(), ouvrier()]);
+}
+
 // ---------- Messages éphémères ----------
 function toast(texte, erreur) {
   const message = el("div", { class: "toast" + (erreur ? " toast-erreur" : "") }, texte);
