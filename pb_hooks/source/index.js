@@ -126,6 +126,11 @@ function filtrerParPays(page, parametres) {
   return page;
 }
 
+// Les films d'une saga (gardés en cache comme le reste)
+function saga(idCollection) {
+  return avecCache(idCollection, "saga", () => fournisseur.saga(idCollection));
+}
+
 // Les personnes (acteurs, réalisateurs...) portant ce nom
 function personnes(texte) {
   return fournisseur.personnes(texte);
@@ -154,7 +159,7 @@ function pays(ids) {
 
 // format : "film" ou "serie"
 function details(format, idSource) {
-  return avecCache(idSource, `details_${format}`, () => fournisseur.details(format, idSource), 2);
+  return avecCache(idSource, `details_${format}`, () => fournisseur.details(format, idSource), 3);
 }
 
 function saisons(idSource) {
@@ -200,4 +205,4 @@ function nettoyerCache() {
   return anciennes.length;
 }
 
-module.exports = { rechercher, decouvrir, explorer, personnes, filtres, pays, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };
+module.exports = { rechercher, decouvrir, explorer, personnes, saga, filtres, pays, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };

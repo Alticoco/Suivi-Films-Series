@@ -124,6 +124,9 @@ async function chargerInfosSource() {
       el("p", { class: "discret" }, lignes.join(" · ")),
       el("p", { class: "synopsis" }, d.synopsis || "Pas de synopsis disponible."),
       creerRecapitulatif(d)); // studio, box-office, pays, équipe, distribution...
+    // Saga : un clic ouvre l'autre film dans le catalogue
+    const saga = creerSaga(d, (film) => { location.href = `catalogue.html?q=${encodeURIComponent(film.titre)}&ouvrir=film:${film.id_source}`; });
+    if (saga) bloc.append(saga);
     // Image TMDB (sauf si j'ai mis la mienne)
     if (!titre.image_perso && d.affiche) {
       const nouvelle = creerImage(urlAffiche(d.affiche, "w342"));

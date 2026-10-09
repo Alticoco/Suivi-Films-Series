@@ -306,6 +306,10 @@ function ouvrirDetail(resultat, apresAjout) {
     }
     meta.textContent = morceaux.filter(Boolean).join(" · ");
     recapZone.replaceChildren(creerRecapitulatif(d)); // studio, box-office, pays, équipe, distribution...
+    // Saga (ex. Avatar 1, 2, 3) : un clic sur un autre film ouvre sa fenêtre à la place de celle-ci
+    const saga = creerSaga(d, (film) => { fenetre.close(); ouvrirDetail(film, () => majPastille(film)); },
+      (film) => bibliotheque.has(cleTitre("film", film.id_source)));
+    if (saga) recapZone.append(saga);
     synopsis.textContent = d.synopsis || "Pas de synopsis disponible.";
     if (d.affiche && d.affiche !== resultat.affiche) dessinerAffiche(d.affiche);
   }).catch(() => {

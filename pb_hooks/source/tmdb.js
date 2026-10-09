@@ -173,8 +173,8 @@ function decouvrir(categorie, page) {
 }
 
 // Version du format de "details" : un titre déjà en cache avec un format plus ancien est rechargé.
-// (v2 : distribution, réalisateur, studio, box-office, pays, classification)
-const VERSION_DETAILS = 2;
+// (v2 : distribution, réalisateur, studio, box-office, pays, classification ; v3 : saga / collection)
+const VERSION_DETAILS = 3;
 
 function personne(p) {
   return { nom: p.name || "", photo: p.profile_path || null };
@@ -257,6 +257,8 @@ function details(format, idSource) {
     // Pays de production (codes ISO, ex. "US") et langue d'origine
     pays: films ? (d.production_countries || []).map((p) => p.iso_3166_1) : d.origin_country || [],
     langue_originale: d.original_language || "",
+    // Saga : les films de la même série (ex. Avatar 1, 2, 3). null si le film n'en fait pas partie.
+    collection: films && d.belongs_to_collection ? { id: String(d.belongs_to_collection.id), nom: d.belongs_to_collection.name || "" } : null,
     // Récapitulatif : studio, box-office, classification, équipe et distribution
     studio: films ? noms(d.production_companies) : noms(d.networks) || noms(d.production_companies),
     box_office: films ? d.revenue || 0 : 0,   // en dollars ; 0 = inconnu
@@ -472,6 +474,14 @@ function filmographie(p) {
   };
 }
 
+// saga(idCollection) → les films d'une saga, dans l'ordre de sortie (ex. Avatar, La Voie de l'eau, De cendres et de flammes)
+function saga(idCollection) {
+  const d = appeler(`/collection/${idCollection}`, { language: "fr-FR" });
+  if (!d) return null;
+  const films = (d.parts || []).slice().sort((a, b) => ((a.release_date || "9999") < (b.release_date || "9999") ? -1 : 1));
+  return { id: String(d.id), nom: d.name || "", films: films.map((f) => resultatNeutre(f, "film")) };
+}
+
 // saisons(idSource) → structure d'une série (liste des saisons)
 function saisons(idSource) {
   const d = details("serie", idSource);
@@ -508,4 +518,4 @@ function episodes(idSource, saison) {
   }));
 }
 
-module.exports = { rechercher, decouvrir, explorer, filtresDisponibles, codesDe, personnes, filmographie, details, saisons, episodes };
+module.exports = { rechercher, decouvrir, explorer, filtresDisponibles, codesDe, personnes, filmographie, saga, details, saisons, episodes };

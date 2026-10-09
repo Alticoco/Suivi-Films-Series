@@ -166,3 +166,33 @@ function creerRecapitulatif(d) {
     el("div", { class: "recap-tuiles" }, tuiles),
     equipe.length ? el("div", { class: "recap-equipe" }, equipe) : null);
 }
+
+// Les autres films de la saga (ex. Avatar 1, 2, 3) : on passe de l'un à l'autre en un clic.
+// "choisir(film)" est appelée au clic sur un film ; "dejaDansLaBibliotheque(film)" (facultatif) ajoute une coche.
+// Renvoie null si le film ne fait pas partie d'une saga ; la zone reste cachée tant qu'on n'a pas la liste.
+function creerSaga(d, choisir, dejaDansLaBibliotheque) {
+  if (!d.collection) return null;
+  const zone = el("div", { class: "saga", hidden: true });
+  source(`saga/${d.collection.id}`).then((saga) => {
+    if (saga.films.length < 2) return; // une saga d'un seul film : rien à montrer
+    const nom = saga.nom.replace(/\s*[-–]\s*(Saga|Collection|Trilogie)\s*$/i, "");
+    zone.replaceChildren(
+      el("h4", {}, `Saga ${nom} · ${saga.films.length} films`),
+      el("div", { class: "saga-films" }, saga.films.map((film) => {
+        const courant = film.id_source === d.id_source;
+        const adresse = urlAffiche(film.affiche, "w185");
+        return el("button", {
+          type: "button", class: `saga-film${courant ? " saga-courant" : ""}`, disabled: courant,
+          title: courant ? "Le film affiché" : `Voir « ${film.titre} »`,
+          onclick: () => choisir(film),
+        },
+          el("span", { class: "saga-affiche-cadre" },
+            adresse ? el("img", { class: "saga-affiche", src: adresse, alt: "", loading: "lazy" }) : el("span", { class: "saga-affiche saga-sans-affiche" }, "Pas d'affiche"),
+            dejaDansLaBibliotheque && dejaDansLaBibliotheque(film) ? el("span", { class: "pastille", title: "Dans ma bibliothèque" }, icone("check")) : null),
+          el("span", { class: "saga-titre" }, film.titre),
+          el("span", { class: "saga-annee" }, courant ? "Ce film" : film.annee ? String(film.annee) : "à venir"));
+      })));
+    zone.hidden = false;
+  }).catch(() => { /* la saga est un petit plus : sans elle, la fiche s'affiche quand même */ });
+  return zone;
+}
