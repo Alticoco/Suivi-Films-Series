@@ -314,6 +314,9 @@ function ouvrirDetail(resultat, apresAjout) {
     const saga = creerSaga(d, (film) => { fenetre.close(); ouvrirDetail(film, () => majPastille(film)); },
       (film) => bibliotheque.has(cleTitre("film", film.id_source)));
     if (saga) recapZone.append(saga);
+    // Titres similaires : un clic ouvre la fenêtre de l'autre titre à la place de celle-ci
+    recapZone.append(creerSimilaires(d, (autre) => { fenetre.close(); ouvrirDetail(autre, () => majPastille(autre)); },
+      (autre) => bibliotheque.has(cleTitre(autre.format, autre.id_source))));
     synopsis.textContent = d.synopsis || "Pas de synopsis disponible.";
     if (d.affiche && d.affiche !== resultat.affiche) dessinerAffiche(d.affiche);
   }).catch(() => {

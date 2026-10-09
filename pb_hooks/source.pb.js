@@ -71,6 +71,14 @@ routerAdd("GET", "/api/source/personnes", (e) => {
   return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.personnes(texte, metier));
 });
 
+// Titres similaires / recommandés : GET /api/source/similaires/film/603
+routerAdd("GET", "/api/source/similaires/{format}/{id}", (e) => {
+  const format = e.request.pathValue("format");
+  const id = e.request.pathValue("id");
+  if ((format !== "film" && format !== "serie") || !/^[0-9]+$/.test(id)) return e.json(400, { message: "Paramètres invalides" });
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.similaires(format, id));
+});
+
 // Les sagas : GET /api/source/sagas (les sagas connues) ou GET /api/source/sagas?q=star+wars (recherche)
 routerAdd("GET", "/api/source/sagas", (e) => {
   const texte = (e.request.url.query().get("q") || "").trim();
