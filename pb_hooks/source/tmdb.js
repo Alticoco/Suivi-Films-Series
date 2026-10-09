@@ -105,6 +105,7 @@ function resultatNeutre(r, formatImpose) {
     affiche: r.poster_path || null,
     note_source: r.vote_average || null,
     anime_probable: animeProbable(r),
+    genre_ids: r.genre_ids || [], // sert à filtrer les résultats d'une recherche
   };
 }
 
@@ -117,11 +118,39 @@ function pageDeResultats(donnees, formatImpose) {
   };
 }
 
-// rechercher(texte, page) → résultats (films + séries), page par page
-function rechercher(texte, page) {
-  return pageDeResultats(appeler("/search/multi", {
+// Un titre passe-t-il les filtres de genres et d'années ? (identifiants de genres propres au film ou à la série)
+// "genres" = identifiants TMDB du titre ; "format" = film | serie ; "anneeTitre" = année de sortie (0 si inconnue)
+function passeGenresEtAnnees(genres, format, anneeTitre, p) {
+  const colonne = format === "film" ? 2 : 3;
+  for (const cle of liste(p.genres_inclus)) {
+    const gid = (GENRES.find((g) => g[0] === cle) || [])[colonne];
+    if (!gid || genres.indexOf(gid) === -1) return false;
+  }
+  for (const cle of liste(p.genres_exclus)) {
+    const gid = (GENRES.find((g) => g[0] === cle) || [])[colonne];
+    if (gid && genres.indexOf(gid) !== -1) return false;
+  }
+  const anneeMin = parseInt(p.annee_min, 10) || 0;
+  const anneeMax = parseInt(p.annee_max, 10) || 0;
+  if (anneeMin && anneeTitre < anneeMin) return false;
+  if (anneeMax && anneeTitre > anneeMax) return false;
+  return true;
+}
+
+// rechercher(texte, page, filtres) → résultats (films + séries), page par page.
+// "filtres" (facultatif) : type, genres_inclus / genres_exclus, annee_min, annee_max.
+// Les filtres de pays sont appliqués par index.js (il faut les fiches complètes).
+function rechercher(texte, page, filtres) {
+  const resultat = pageDeResultats(appeler("/search/multi", {
     query: texte, language: "fr-FR", include_adult: "false", page: page || 1,
   }));
+  if (!filtres) return resultat;
+  resultat.resultats = resultat.resultats.filter((r) => {
+    if (filtres.type === "film" && r.format !== "film") return false;
+    if (filtres.type === "serie" && r.format !== "serie") return false;
+    return passeGenresEtAnnees(r.genre_ids || [], r.format, r.annee || 0, filtres);
+  });
+  return resultat;
 }
 
 // Catégories proposées pour « se balader » dans le catalogue
@@ -409,10 +438,6 @@ function filmographie(p) {
     : (d.crew || []).filter((c) => c.job === "Director");
 
   const vus = {};
-  const inclus = liste(p.genres_inclus);
-  const exclus = liste(p.genres_exclus);
-  const anneeMin = parseInt(p.annee_min, 10) || 0;
-  const anneeMax = parseInt(p.annee_max, 10) || 0;
   const aujourdhui = new Date().toISOString().slice(0, 10);
 
   const gardes = brut.filter((c) => {
@@ -423,20 +448,8 @@ function filmographie(p) {
     if (p.type === "film" && c.media_type !== "movie") return false;
     if (p.type === "serie" && c.media_type !== "tv") return false;
 
-    const colonne = c.media_type === "movie" ? 2 : 3;
-    const genres = c.genre_ids || [];
-    for (const cleGenre of inclus) {
-      const gid = (GENRES.find((g) => g[0] === cleGenre) || [])[colonne];
-      if (!gid || genres.indexOf(gid) === -1) return false;
-    }
-    for (const cleGenre of exclus) {
-      const gid = (GENRES.find((g) => g[0] === cleGenre) || [])[colonne];
-      if (gid && genres.indexOf(gid) !== -1) return false;
-    }
     const date = c.media_type === "movie" ? c.release_date : c.first_air_date;
-    const an = annee(date) || 0;
-    if (anneeMin && an < anneeMin) return false;
-    if (anneeMax && an > anneeMax) return false;
+    if (!passeGenresEtAnnees(c.genre_ids || [], c.media_type === "movie" ? "film" : "serie", annee(date) || 0, p)) return false;
     if (p.tri === "recents" && (!date || date > aujourdhui)) return false; // pas de titres pas encore sortis
     return true;
   });
@@ -472,12 +485,19 @@ function episodes(idSource, saison) {
   if (!d) return null;
 
   let liste = d.episodes || [];
-  // Résumés français manquants : repli sur l'anglais
-  if (liste.some((e) => !e.overview)) {
+  // Résumé ou titre français manquants (titre générique « Épisode 17 ») : repli sur l'anglais
+  const titreGenerique = (nom) => !nom || /^(épisode|episode)\s*\d+$/i.test(nom.trim());
+  if (liste.some((e) => !e.overview || titreGenerique(e.name))) {
     const en = appeler(chemin, { language: "en-US" });
     const anglais = {};
-    ((en && en.episodes) || []).forEach((e) => { anglais[e.episode_number] = e.overview; });
-    liste = liste.map((e) => Object.assign({}, e, { overview: e.overview || anglais[e.episode_number] || "" }));
+    ((en && en.episodes) || []).forEach((e) => { anglais[e.episode_number] = e; });
+    liste = liste.map((e) => {
+      const version = anglais[e.episode_number] || {};
+      return Object.assign({}, e, {
+        overview: e.overview || version.overview || "",
+        name: titreGenerique(e.name) && version.name ? version.name : e.name,
+      });
+    });
   }
   return liste.map((e) => ({
     numero: e.episode_number,

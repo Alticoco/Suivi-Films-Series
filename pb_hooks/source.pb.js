@@ -3,7 +3,7 @@
 // Routes que le navigateur utilise pour parler à la "source" (TMDB).
 // Le navigateur ne voit jamais le jeton : c'est le serveur qui appelle TMDB.
 //
-//   GET /api/source/rechercher?q=texte&page=1
+//   GET /api/source/rechercher?q=texte&page=1   (+ filtres facultatifs : type, genres_*, pays_*, annee_*)
 //   GET /api/source/decouvrir?categorie=tendances&page=1   (se balader dans le catalogue)
 //   GET /api/source/explorer?type=…&genres_inclus=…&pays_exclus=…  (parcourir avec des filtres)
 //   GET /api/source/personnes?q=nom   (acteurs, réalisateurs...) ; explorer accepte personne_id + personne_role
@@ -21,8 +21,16 @@
 routerAdd("GET", "/api/source/rechercher", (e) => {
   const texte = (e.request.url.query().get("q") || "").trim();
   if (!texte) return e.json(400, { message: "Paramètre q manquant" });
-  const page = Math.max(1, Math.min(500, parseInt(e.request.url.query().get("page") || "1", 10) || 1));
-  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.rechercher(texte, page));
+  const q = e.request.url.query();
+  const page = Math.max(1, Math.min(500, parseInt(q.get("page") || "1", 10) || 1));
+  // Filtres facultatifs, pour retirer ce qui n'intéresse pas (mêmes noms que pour « explorer »)
+  const filtres = {
+    type: q.get("type") || "tous",
+    genres_inclus: q.get("genres_inclus") || "", genres_exclus: q.get("genres_exclus") || "",
+    pays_inclus: q.get("pays_inclus") || "", pays_exclus: q.get("pays_exclus") || "",
+    annee_min: q.get("annee_min") || "", annee_max: q.get("annee_max") || "",
+  };
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.rechercher(texte, page, filtres));
 });
 
 // Pour « se balader » : GET /api/source/decouvrir?categorie=tendances&page=2

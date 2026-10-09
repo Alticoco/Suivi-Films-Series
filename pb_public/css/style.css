@@ -527,6 +527,26 @@ button.personne-trouvee:hover { border-color: var(--couleur-contour); }
 .personne-etiquette { display: flex; align-items: center; gap: var(--espace-2); margin: var(--espace-2) 0 0; color: var(--couleur-menthe); }
 .personne-choisie fieldset { margin-top: var(--espace-2); max-width: 32rem; }
 
+/* ---------- Tuile cliquable (classification) et fenêtre d'information ---------- */
+button.recap-tuile-bouton {
+  font: inherit; color: inherit; cursor: pointer; width: 100%;
+  background: var(--couleur-fond); border: 1px solid var(--couleur-trait); border-radius: var(--rayon-moyen);
+}
+button.recap-tuile-bouton:hover { border-color: var(--couleur-contour); filter: none; }
+.recap-tuile-libelle { display: inline-flex; align-items: center; gap: 0.35em; }
+.recap-tuile-libelle .icone { width: 0.9em; height: 0.9em; }
+dialog.dialogue-info { width: min(40rem, 94vw); max-height: 90vh; overflow-y: auto; }
+.info-actuelle { font-weight: 600; margin-top: 0; }
+.info-groupe { margin-top: var(--espace-5); }
+.info-groupe h3 { margin: 0 0 var(--espace-1); }
+.info-groupe > .discret { margin: 0 0 var(--espace-2); }
+.info-groupe dl { margin: 0; }
+.info-ligne { display: grid; grid-template-columns: 6rem 1fr; gap: var(--espace-3); padding: var(--espace-2) var(--espace-3); border-top: 1px solid var(--couleur-trait); border-radius: var(--rayon-petit); }
+.info-ligne dt { font-family: var(--police-mono); font-weight: 600; }
+.info-ligne dd { margin: 0; display: flex; flex-direction: column; font-size: var(--taille-ui); }
+.info-ligne dd span { color: var(--couleur-texte-discret); }
+.info-ligne-active { background: var(--couleur-menthe-douce); border-color: var(--couleur-menthe); }
+
 /* ---------- Suggestions de la barre de recherche ---------- */
 .recherche { position: relative; }
 .suggestions {

@@ -144,7 +144,7 @@ function creerFormulaireSerie(resultat, apres) {
     // Saisons « normales » d'abord, épisodes spéciaux à la fin
     saisons = [...resultatSaisons.filter((s) => s.numero > 0), ...resultatSaisons.filter((s) => s.numero === 0)];
     selectSaison.replaceChildren(...saisons.map((s) => el("option", { value: String(s.numero) },
-      s.numero === 0 ? "Épisodes spéciaux" : `Saison ${s.numero} (${s.episodes.length} épisode${s.episodes.length > 1 ? "s" : ""})`)));
+      s.numero === 0 ? `Bonus : coulisses, résumés… (${s.episodes.length})` : `Saison ${s.numero} (${s.episodes.length} épisode${s.episodes.length > 1 ? "s" : ""})`)));
     selectSaison.disabled = false;
     etatChargement.hidden = true;
     zoneEpisodes.hidden = false;
@@ -461,7 +461,10 @@ const filtres = {
     ? { id: parametres.get("pers"), nom: (parametres.get("pnom") || "").slice(0, 80), role: parametres.get("prole") === "realisateur" ? "realisateur" : "acteur" }
     : null,
 };
-const filtresActifs = !texteRecherche && ["type", "gi", "ge", "pi", "pe", "amin", "amax", "tri", "pers"].some((cle) => parametres.has(cle));
+// Pendant une recherche par nom, les filtres servent à retirer ce qui n'intéresse pas (type, genres, pays, années)
+const clesFiltres = texteRecherche ? ["type", "gi", "ge", "pi", "pe", "amin", "amax"] : ["type", "gi", "ge", "pi", "pe", "amin", "amax", "tri", "pers"];
+const filtresActifs = clesFiltres.some((cle) => parametres.has(cle));
+if (texteRecherche) { filtres.personne = null; filtres.tri = "populaires"; }
 
 const TRIS = { populaires: "Les plus populaires", mieux_notes: "Les mieux notés", recents: "Les plus récents" };
 const cleDe = (etat, valeur) => Object.keys(etat).filter((cle) => etat[cle] === valeur).join(",");
@@ -479,6 +482,7 @@ function parametresExplorer(page) {
 // Adresse de la page pour les filtres choisis (seulement ce qui diffère de la valeur par défaut)
 function adresseFiltres() {
   const p = new URLSearchParams();
+  if (texteRecherche) p.set("q", texteRecherche);
   if (filtres.type !== "tous") p.set("type", filtres.type);
   [["gi", cleDe(filtres.genres, 1)], ["ge", cleDe(filtres.genres, -1)], ["pi", cleDe(filtres.pays, 1)], ["pe", cleDe(filtres.pays, -1)],
     ["amin", filtres.anneeMin], ["amax", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
@@ -503,7 +507,7 @@ function resumeFiltres(choix) {
   if (inclus.length) parties.push(`avec : ${inclus.join(", ")}`);
   if (exclus.length) parties.push(`sans : ${exclus.join(", ")}`);
   if (filtres.anneeMin || filtres.anneeMax) parties.push(`${filtres.anneeMin || "…"} – ${filtres.anneeMax || "…"}`);
-  parties.push(TRIS[filtres.tri].toLowerCase());
+  if (!texteRecherche) parties.push(TRIS[filtres.tri].toLowerCase()); // le tri n'existe pas pendant une recherche par nom
   return parties.join(" · ");
 }
 
@@ -597,7 +601,7 @@ function construirePanneauFiltres(choix) {
   const corps = el("div", { class: "filtres-corps" },
     el("p", { class: "discret" }, "Clique une fois sur une puce pour l'inclure (elle devient verte), deux fois pour l'exclure (rouge), trois fois pour la retirer."),
     radiosType,
-    creerChampPersonne(majCompteur),
+    texteRecherche ? el("p", { class: "discret" }, "Ces filtres retirent des résultats de ta recherche ce qui ne t'intéresse pas.") : creerChampPersonne(majCompteur),
     el("div", { class: "champ" }, el("label", {}, "Genres (le titre doit avoir tous les genres inclus)"), groupePuces(choix.genres, filtres.genres),
       el("p", { class: "discret" }, "Horreur, Thriller, Romance, Histoire et Musique n'existent que pour les films : les inclure masque les séries.")),
     el("div", { class: "champ" }, el("label", {}, "Régions (au moins une des régions incluses)"), groupePuces(choix.regions, filtres.pays)),
@@ -605,10 +609,10 @@ function construirePanneauFiltres(choix) {
     el("div", { class: "ligne-filtres" },
       el("div", { class: "champ" }, el("label", {}, "Années de sortie"),
         el("div", { class: "champ-annees" }, champAnnee("Année minimum", "anneeMin", "de"), el("span", { class: "discret" }, "à"), champAnnee("Année maximum", "anneeMax", "à"))),
-      el("div", { class: "champ" }, el("label", {}, "Trier par"), choixTri)),
+      texteRecherche ? null : el("div", { class: "champ" }, el("label", {}, "Trier par"), choixTri)),
     el("div", { class: "boutons-filtres" },
       el("button", { type: "button", class: "principal", onclick: () => { location.href = adresseFiltres(); } }, "Appliquer les filtres"),
-      el("button", { type: "button", onclick: () => { location.href = "catalogue.html"; } }, "Réinitialiser")));
+      el("button", { type: "button", onclick: () => { location.href = texteRecherche ? `catalogue.html?q=${encodeURIComponent(texteRecherche)}` : "catalogue.html"; } }, "Réinitialiser")));
 
   const panneau = el("details", { class: "panneau-filtres" }, el("summary", {}, "Filtres", compteur), corps);
   majCompteur();
@@ -625,7 +629,7 @@ async function chargerPageSuivante() {
   const page = etat.page + 1;
   try {
     const url = texteRecherche
-      ? `rechercher?q=${encodeURIComponent(texteRecherche)}&page=${page}`
+      ? `rechercher?q=${encodeURIComponent(texteRecherche)}&${parametresExplorer(page)}`
       : filtresActifs
         ? `explorer?${parametresExplorer(page)}`
         : `decouvrir?categorie=${categorieChoisie}&page=${page}`;
@@ -641,8 +645,10 @@ async function chargerPageSuivante() {
     grille.append(...nouveaux.map(creerCarte));
     completerPays(nouveaux);
 
-    if (texteRecherche && !etat.dejaVus.size) {
-      message.textContent = `Aucun résultat pour « ${texteRecherche} ». Tu peux l'ajouter manuellement.`;
+    if (texteRecherche && !etat.dejaVus.size && etat.page >= etat.totalPages) {
+      message.textContent = filtresActifs
+        ? `Aucun résultat pour « ${texteRecherche} » avec ces filtres. Essaie d'en retirer un.`
+        : `Aucun résultat pour « ${texteRecherche} ». Tu peux l'ajouter manuellement.`;
     } else if (filtresActifs && !etat.dejaVus.size && etat.page >= etat.totalPages) {
       message.textContent = "Aucun titre ne correspond à ces filtres. Essaie d'en retirer un.";
     } else if (etat.page >= etat.totalPages) {
@@ -671,7 +677,7 @@ function afficherCategories() {
   const zone = document.getElementById("categories");
   if (texteRecherche) {
     zone.replaceChildren(
-      el("span", { class: "discret" }, `Résultats pour « ${texteRecherche} » `),
+      el("span", { class: "discret", id: "resume-filtres" }, `Résultats pour « ${texteRecherche} » `),
       el("a", { href: "catalogue.html" }, icone("arrow-left"), "Revenir à la découverte"));
     return;
   }
@@ -687,13 +693,15 @@ function afficherCategories() {
 
 document.getElementById("bouton-manuel").addEventListener("click", ouvrirAjoutManuel);
 afficherCategories();
-if (!texteRecherche) {
-  source("filtres").then((choix) => {
-    construirePanneauFiltres(choix);
-    const resume = document.getElementById("resume-filtres");
-    if (resume) resume.textContent = `Résultats filtrés : ${resumeFiltres(choix)} `;
-  }).catch(() => { /* sans les choix de filtres, le catalogue marche quand même */ });
-}
+source("filtres").then((choix) => {
+  construirePanneauFiltres(choix);
+  const resume = document.getElementById("resume-filtres");
+  if (resume && filtresActifs) {
+    resume.textContent = texteRecherche
+      ? `Résultats pour « ${texteRecherche} » · ${resumeFiltres(choix)} `
+      : `Résultats filtrés : ${resumeFiltres(choix)} `;
+  }
+}).catch(() => { /* sans les choix de filtres, le catalogue marche quand même */ });
 message.textContent = "Chargement…";
 chargerPageSuivante().then(() => {
   // Venu des suggestions de la barre de recherche (?ouvrir=serie:1399) : on ouvre la fiche de ce titre

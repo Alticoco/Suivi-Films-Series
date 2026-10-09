@@ -145,7 +145,9 @@ function sectionSerie() {
 
 async function chargerEpisodes() {
   try {
-    saisonsSerie = await chargerSaisons(titre.id_source);
+    const toutes = await chargerSaisons(titre.id_source);
+    // Les « épisodes spéciaux » (saison 0 : making-of, résumés, documentaires…) passent en dernier
+    saisonsSerie = [...toutes.filter((s) => s.numero > 0), ...toutes.filter((s) => s.numero === 0)];
   } catch (erreur) {
     const bloc = document.getElementById("chargement-episodes");
     if (bloc) { bloc.className = "ko"; bloc.textContent = `Épisodes indisponibles : ${erreur.message}`; }
@@ -223,9 +225,12 @@ function dessinerSaison(saison, vus) {
     ? el("button", { type: "button", onclick: () => confirmerDecocherSaison(saison) }, "Décocher la saison")
     : el("button", { type: "button", disabled: !diffuses.length, onclick: () => cocherSaison(saison) }, "Cocher toute la saison");
 
-  const resumeSaison = `${saison.nom} — ${vusSaison}/${saison.episodes.length}${aVenir ? ` (${aVenir} à venir)` : ""}`;
+  const bonus = saison.numero === 0; // la « saison 0 » de TMDB : vidéos annexes, pas de vrais épisodes
+  const nomSaison = bonus ? "Bonus : coulisses, résumés, documentaires" : saison.nom;
+  const resumeSaison = `${nomSaison} — ${vusSaison}/${saison.episodes.length}${aVenir ? ` (${aVenir} à venir)` : ""}`;
   const detail = el("details", { class: "saison", open: saisonsOuvertes.has(saison.numero) },
     el("summary", {}, resumeSaison),
+    bonus ? el("p", { class: "discret" }, "Vidéos annexes de la série (making-of, résumés, interviews, documentaires…). Elles ne comptent pas dans ta progression.") : null,
     el("div", { class: "actions-saison" }, boutonSaison),
     liste);
   detail.addEventListener("toggle", () => {
