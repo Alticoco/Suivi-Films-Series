@@ -13,6 +13,7 @@ const CATEGORIES = [
   ["series_populaires", "Séries populaires"],
   ["films_mieux_notes", "Films les mieux notés"],
   ["series_mieux_notees", "Séries les mieux notées"],
+  ["sagas", "Sagas"],
 ];
 
 const STATUTS_DIFFUSION = {
@@ -464,6 +465,7 @@ const filtres = {
   type: ["film", "serie"].includes(parametres.get("type")) ? parametres.get("type") : "tous",
   genres: etatDepuisUrl("gi", "ge"),
   pays: etatDepuisUrl("pi", "pe"),
+  themes: etatDepuisUrl("ti", "te"),
   anneeMin: (parametres.get("amin") || "").replace(/\D/g, "").slice(0, 4),
   anneeMax: (parametres.get("amax") || "").replace(/\D/g, "").slice(0, 4),
   tri: ["mieux_notes", "recents"].includes(parametres.get("tri")) ? parametres.get("tri") : "populaires",
@@ -477,9 +479,9 @@ const filtres = {
     : null,
 };
 // Pendant une recherche par nom, les filtres servent à retirer ce qui n'intéresse pas (type, genres, pays, années)
-const clesFiltres = texteRecherche ? ["type", "gi", "ge", "pi", "pe", "amin", "amax"] : ["type", "gi", "ge", "pi", "pe", "amin", "amax", "tri", "pers", "soc"];
+const clesFiltres = texteRecherche ? ["type", "gi", "ge", "pi", "pe", "amin", "amax"] : ["type", "gi", "ge", "pi", "pe", "ti", "te", "amin", "amax", "tri", "pers", "soc"];
 const filtresActifs = clesFiltres.some((cle) => parametres.has(cle));
-if (texteRecherche) { filtres.personne = null; filtres.societe = null; filtres.tri = "populaires"; }
+if (texteRecherche) { filtres.personne = null; filtres.societe = null; filtres.themes = {}; filtres.tri = "populaires"; }
 
 const TRIS = { populaires: "Les plus populaires", mieux_notes: "Les mieux notés", recents: "Les plus récents" };
 const cleDe = (etat, valeur) => Object.keys(etat).filter((cle) => etat[cle] === valeur).join(",");
@@ -489,6 +491,7 @@ function parametresExplorer(page) {
   const p = new URLSearchParams({ type: filtres.type, tri: filtres.tri, page });
   [["genres_inclus", cleDe(filtres.genres, 1)], ["genres_exclus", cleDe(filtres.genres, -1)],
     ["pays_inclus", cleDe(filtres.pays, 1)], ["pays_exclus", cleDe(filtres.pays, -1)],
+    ["themes_inclus", cleDe(filtres.themes, 1)], ["themes_exclus", cleDe(filtres.themes, -1)],
     ["annee_min", filtres.anneeMin], ["annee_max", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
   if (filtres.personne) { p.set("personne_id", filtres.personne.id); p.set("personne_role", filtres.personne.role); }
   if (filtres.societe) { p.set("societe_id", filtres.societe.id); p.set("societe_type", filtres.societe.type); }
@@ -501,27 +504,27 @@ function adresseFiltres() {
   if (texteRecherche) p.set("q", texteRecherche);
   if (filtres.type !== "tous") p.set("type", filtres.type);
   [["gi", cleDe(filtres.genres, 1)], ["ge", cleDe(filtres.genres, -1)], ["pi", cleDe(filtres.pays, 1)], ["pe", cleDe(filtres.pays, -1)],
-    ["amin", filtres.anneeMin], ["amax", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
+    ["ti", cleDe(filtres.themes, 1)], ["te", cleDe(filtres.themes, -1)], ["amin", filtres.anneeMin], ["amax", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
   if (filtres.tri !== "populaires") p.set("tri", filtres.tri);
   if (filtres.personne) { p.set("pers", filtres.personne.id); p.set("pnom", filtres.personne.nom); p.set("prole", filtres.personne.role); }
   if (filtres.societe) { p.set("soc", filtres.societe.id); p.set("snom", filtres.societe.nom); p.set("stype", filtres.societe.type); }
   return p.toString() ? `catalogue.html?${p}` : "catalogue.html";
 }
 
-const nombreFiltres = () => Object.keys(filtres.genres).length + Object.keys(filtres.pays).length
+const nombreFiltres = () => Object.keys(filtres.genres).length + Object.keys(filtres.pays).length + Object.keys(filtres.themes).length
   + (filtres.type !== "tous" ? 1 : 0) + (filtres.anneeMin || filtres.anneeMax ? 1 : 0) + (filtres.tri !== "populaires" ? 1 : 0)
   + (filtres.personne ? 1 : 0) + (filtres.societe ? 1 : 0);
 
 // Une phrase qui résume les filtres actifs (affichée au-dessus de la grille)
 function resumeFiltres(choix) {
-  const nom = (cle) => (choix.genres.concat(choix.pays, choix.regions).find((x) => x.cle === cle) || {}).libelle || (/^[A-Z]{2}$/.test(cle) ? nomPays(cle) : cle);
+  const nom = (cle) => (choix.genres.concat(choix.pays, choix.regions, choix.themes || []).find((x) => x.cle === cle) || {}).libelle || (/^[A-Z]{2}$/.test(cle) ? nomPays(cle) : cle);
   const liste = (a, b) => [a, b].join(",").split(",").filter((x) => x).map(nom);
   const parties = [];
   if (filtres.type !== "tous") parties.push(filtres.type === "film" ? "films" : "séries");
   if (filtres.personne) parties.push(`${{ realisateur: "réalisés par", producteur: "produits par", acteur: "avec" }[filtres.personne.role]} ${filtres.personne.nom}`);
   if (filtres.societe) parties.push(`${filtres.societe.type === "chaine" ? "diffusés sur" : "du studio"} ${filtres.societe.nom}`);
-  const inclus = liste(cleDe(filtres.genres, 1), cleDe(filtres.pays, 1));
-  const exclus = liste(cleDe(filtres.genres, -1), cleDe(filtres.pays, -1));
+  const inclus = liste(cleDe(filtres.genres, 1), cleDe(filtres.pays, 1)).concat(liste(cleDe(filtres.themes, 1), ""));
+  const exclus = liste(cleDe(filtres.genres, -1), cleDe(filtres.pays, -1)).concat(liste(cleDe(filtres.themes, -1), ""));
   if (inclus.length) parties.push(`avec : ${inclus.join(", ")}`);
   if (exclus.length) parties.push(`sans : ${exclus.join(", ")}`);
   if (filtres.anneeMin || filtres.anneeMax) parties.push(`${filtres.anneeMin || "…"} – ${filtres.anneeMax || "…"}`);
@@ -606,6 +609,7 @@ function construirePanneauFiltres(choix) {
         el("button", { type: "button", class: "lien", onclick: () => { filtres.societe = null; location.href = adresseFiltres(); } }, "Retirer"))) : null,
     el("div", { class: "champ" }, el("label", {}, "Genres (le titre doit avoir tous les genres inclus)"), groupePuces(choix.genres, filtres.genres),
       el("p", { class: "discret" }, "Horreur, Thriller, Romance, Histoire et Musique n'existent que pour les films : les inclure masque les séries.")),
+    texteRecherche || !(choix.themes || []).length ? null : el("div", { class: "champ" }, el("label", {}, "Thèmes (au moins un des thèmes inclus)"), groupePuces(choix.themes, filtres.themes)),
     el("div", { class: "champ" }, el("label", {}, "Régions (au moins une des régions incluses)"), groupePuces(choix.regions, filtres.pays)),
     el("div", { class: "champ" }, el("label", {}, "Pays de production"), groupePuces(choix.pays, filtres.pays)),
     el("div", { class: "ligne-filtres" },
@@ -714,7 +718,53 @@ async function afficherPersonnes() {
   }
 }
 
-if (textePersonne) afficherPersonnes(); else demarrerCatalogue();
+// Une saga (?saga=ID) : tous ses films dans l'ordre de sortie
+const idSaga = /^[0-9]+$/.test(parametres.get("saga") || "") ? parametres.get("saga") : "";
+async function afficherSaga() {
+  document.getElementById("categories").replaceChildren(
+    el("span", { class: "discret", id: "titre-saga" }, "Saga "),
+    el("a", { href: "catalogue.html?categorie=sagas" }, icone("arrow-left"), "Toutes les sagas"));
+  message.textContent = "Chargement…";
+  try {
+    const [s] = await Promise.all([source(`saga/${idSaga}`), chargerBibliotheque()]);
+    document.getElementById("titre-saga").textContent = `Saga « ${s.nom.replace(/ - Saga$/i, "")} » · ${s.films.length} film${s.films.length > 1 ? "s" : ""}, dans l'ordre de sortie `;
+    grille.append(...s.films.map(creerCarte));
+    completerPays(s.films);
+    message.textContent = "";
+  } catch (erreur) {
+    message.className = "ko";
+    message.textContent = erreur.message;
+  }
+}
+
+// L'onglet « Sagas » : les sagas connues, ou le résultat d'une recherche par nom
+async function afficherSagas() {
+  afficherCategories();
+  const recherche = (parametres.get("qs") || "").trim();
+  const champ = el("input", { type: "search", placeholder: "Chercher une saga (Star Wars, James Bond…)", "aria-label": "Chercher une saga", value: recherche });
+  const formulaire = el("form", { class: "recherche-saga", onsubmit: (e) => { e.preventDefault(); location.href = `catalogue.html?categorie=sagas${champ.value.trim() ? `&qs=${encodeURIComponent(champ.value.trim())}` : ""}`; } },
+    champ, el("button", { type: "submit" }, icone("search"), "Chercher"));
+  document.getElementById("categories").after(formulaire);
+  const zone = el("div", { class: "grille-sagas" });
+  grille.replaceWith(zone);
+  message.textContent = "Chargement des sagas…";
+  try {
+    const liste = await source(recherche ? `sagas?q=${encodeURIComponent(recherche)}` : "sagas");
+    message.textContent = liste.length ? (recherche ? `Sagas pour « ${recherche} »` : "") : `Aucune saga trouvée pour « ${recherche} ».`;
+    zone.append(...liste.map((s) => {
+      const adresse = urlAffiche(s.affiche, "w342");
+      return el("a", { class: "carte-saga", href: `catalogue.html?saga=${s.id}` },
+        adresse ? el("img", { src: adresse, alt: "", loading: "lazy" }) : el("span", { class: "carte-saga-vide" }, s.nom),
+        el("strong", {}, s.nom.replace(/ - Saga$/i, "").replace(/ \(Saga\)$/i, "")),
+        s.nb_films ? el("span", { class: "discret" }, `${s.nb_films} films`) : null);
+    }));
+  } catch (erreur) {
+    message.className = "ko";
+    message.textContent = erreur.message;
+  }
+}
+
+if (textePersonne) afficherPersonnes(); else if (idSaga) afficherSaga(); else if (categorieChoisie === "sagas") afficherSagas(); else demarrerCatalogue();
 
 function demarrerCatalogue() {
 afficherCategories();
