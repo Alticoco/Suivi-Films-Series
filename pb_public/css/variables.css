@@ -11,16 +11,16 @@
 
   /* Surfaces */
   --couleur-fond: #000000;          /* page : noir pur, choisi par l'utilisateur (la maquette proposait #101216) */
-  --couleur-carte: #1a1d22;         /* cartes (Slate Lift) */
-  --couleur-panneau: #1f232a;       /* bouton secondaire, survol (Pane) */
-  --couleur-trait: rgba(230, 232, 235, 0.08);       /* bordure de carte, séparateurs */
-  --couleur-separateur: rgba(230, 232, 235, 0.10);  /* lignes de séparation */
-  --couleur-contour: rgba(230, 232, 235, 0.16);     /* bordure des boutons « contour » */
+  --couleur-carte: #140a0d;         /* cartes : bordeaux presque noir (velours de salle) */
+  --couleur-panneau: #1e0f13;       /* bouton secondaire, survol */
+  --couleur-trait: rgba(255, 205, 214, 0.09);       /* bordure de carte, séparateurs */
+  --couleur-separateur: rgba(255, 205, 214, 0.11);  /* lignes de séparation */
+  --couleur-contour: rgba(255, 205, 214, 0.20);     /* bordure des boutons « contour » */
   --couleur-voile: rgba(0, 0, 0, 0.6);              /* fond sombre derrière les fenêtres */
 
   /* Encre */
   --couleur-texte: #e6e8eb;         /* texte, titres, bouton principal (Bone) */
-  --couleur-texte-discret: #7d848e; /* texte secondaire, étiquettes (Bone 55) */
+  --couleur-texte-discret: #a39095; /* texte secondaire, étiquettes : gris rosé, plus chaud que le gris bleuté */
   --couleur-sur-primaire: #101216;  /* texte posé sur le bouton principal */
 
   /* Accent : la menthe n'apparaît que pour les états positifs, l'onglet actif et le focus */
@@ -53,7 +53,7 @@
 
   /* Ombres */
   --ombre-carte: rgba(0, 0, 0, 0.35) 0 1px 0 inset, rgba(0, 0, 0, 0.4) 0 1px 2px;
-  --ombre-survol: 0 16px 40px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(230, 232, 235, 0.18);
+  --ombre-survol: 0 16px 40px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 205, 214, 0.20);
   --ombre-fenetre: 0 12px 28px -8px rgba(0, 0, 0, 0.6);
 
   /* Espacements (base 4px) */
@@ -72,6 +72,7 @@
   --courbe: cubic-bezier(0.32, 0.72, 0, 1);
 
   /* Dimensions propres au site */
+  --hauteur-controle: 2.25rem;      /* hauteur commune des boutons de filtre, listes déroulantes et puces */
   --largeur-max: 1280px;
   --largeur-carte-titre: 170px;     /* largeur d'une affiche dans les grilles */
   --largeur-affiche-fiche: 260px;   /* largeur de l'affiche sur la fiche d'un titre */

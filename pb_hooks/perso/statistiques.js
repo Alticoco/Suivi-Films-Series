@@ -47,7 +47,7 @@ function calculer() {
   let titresVusCetteAnnee = 0;
 
   // Un jeu de chiffres : cette année, ou toute ma vie
-  const nouveauBloc = () => ({ minutes_films: 0, minutes_episodes: 0, minutes_total: 0, films: 0, episodes: 0, titres_vus: { film: 0, serie: 0, anime: 0 } });
+  const nouveauBloc = () => ({ minutes_films: 0, minutes_episodes: 0, minutes_total: 0, films: 0, episodes: 0, revus: 0, titres_vus: { film: 0, serie: 0, anime: 0 } });
   const cetteAnnee = nouveauBloc();
   const total = nouveauBloc();
   function compter(bloc, film, minutes) {
@@ -81,6 +81,18 @@ function calculer() {
       else manquants[`${film ? "film" : "serie"}:${idSource}`] = { format: film ? "film" : "serie", id_source: idSource };
     } else {
       duree = t.getInt("duree_min");
+    }
+
+    // Titres revus : un film vu plusieurs fois, une série revue (passage 2 ou plus)
+    const dates = siens.filter((v) => !v.getBool("avant")).map((v) => v.getString("date").slice(0, 10)).sort();
+    if (film) {
+      const dejaVuSansDate = vuAvant || siens.some((v) => v.getBool("avant"));
+      if (siens.length + (vuAvant ? 1 : 0) >= 2) total.revus++;
+      // Cette année : une vision datée de l'année qui n'est pas la toute première fois
+      if (dates.some((d, i) => d.slice(0, 4) === anneeEnCours && (dejaVuSansDate || i > 0))) cetteAnnee.revus++;
+    } else {
+      if (siens.some((v) => v.getInt("passage") > 1)) total.revus++;
+      if (siens.some((v) => v.getInt("passage") > 1 && !v.getBool("avant") && v.getString("date").slice(0, 4) === anneeEnCours)) cetteAnnee.revus++;
     }
 
     const episodesVus = {}; // « saison:épisode » déjà comptés (pour ne pas les recompter avec « vu avant »)

@@ -42,13 +42,28 @@ function afficherVue() {
   texte("vus-film", bloc.titres_vus.film);
   texte("vus-serie", bloc.titres_vus.serie);
   texte("vus-anime", bloc.titres_vus.anime);
-  document.getElementById("bloc-annees").hidden = vue !== "total";
+  texte("titres-revus", bloc.revus);
   texte("note-periode", vue === "total"
-    ? "Toute ma vie : toutes les années, plus ce que j'ai vu avant la création du site (sans date). Pour un titre « vu avant », la durée est estimée : un film compte une fois, une série compte tous ses épisodes diffusés (hors spéciaux) qui ne sont pas cochés un par un. Le temps d'un épisode est sa durée connue, sinon la durée habituelle d'un épisode de la série."
-    : `Année ${stats.annee_en_cours} : seulement les visionnages datés de cette année. Ce qui a été vu avant la création du site n'y figure pas (voir « Toute ma vie »).`);
-  document.getElementById("vues").replaceChildren(...[["annee", `Cette année (${stats.annee_en_cours})`], ["total", "Toute ma vie"]].map(([cle, libelle]) =>
+    ? "Total : toutes les années, plus ce que j'ai vu avant la création du site (sans date). Pour un titre « vu avant », la durée est estimée : un film compte une fois, une série compte tous ses épisodes diffusés (hors spéciaux) qui ne sont pas cochés un par un. Le temps d'un épisode est sa durée connue, sinon la durée habituelle d'un épisode de la série."
+    : `Année ${stats.annee_en_cours} : seulement les visionnages datés de cette année. Ce qui a été vu avant la création du site n'y figure pas (voir « Total »).`);
+  document.getElementById("vues").replaceChildren(...[["annee", `Cette année (${stats.annee_en_cours})`], ["total", "Total"]].map(([cle, libelle]) =>
     el("a", { href: `statistiques.html?vue=${cle}`, class: `pastille-categorie${cle === vue ? " active" : ""}`, "aria-current": cle === vue ? "true" : null,
       onclick: (e) => { e.preventDefault(); vue = cle; history.replaceState(null, "", `?vue=${cle}`); afficherVue(); } }, libelle)));
+}
+
+// Coups de cœur : une petite affiche par titre, qui mène à sa fiche
+async function afficherCoeurs() {
+  const [titres, resumes] = await Promise.all([pbListe("titres"), chargerResumes(1200, () => {})]);
+  const coeurs = titres.filter((t) => t.coup_de_coeur).sort((a, b) => a.titre.localeCompare(b.titre, "fr"));
+  document.getElementById("nb-coeurs").textContent = coeurs.length;
+  document.getElementById("bloc-coeurs").hidden = !coeurs.length;
+  document.getElementById("coeurs").replaceChildren(...coeurs.map((t) => {
+    const resume = t.source === "tmdb" ? resumes[`${t.format_source}:${t.id_source}`] : null;
+    const adresse = urlImageTitre(t, resume ? resume.affiche : null, "w185");
+    return el("a", { class: "coeur-carte", href: `fiche.html?id=${t.id}`, title: t.titre },
+      adresse ? el("img", { src: adresse, alt: `Affiche de ${t.titre}`, loading: "lazy" }) : el("span", { class: "coeur-vide" }, t.titre),
+      el("span", {}, t.titre));
+  }));
 }
 
 async function demarrer() {
@@ -57,6 +72,7 @@ async function demarrer() {
     stats = await chargerStatistiques();
     afficherAnnees(stats.par_annee);
     afficherVue();
+    afficherCoeurs().catch(() => { /* les coups de cœur sont un plus : sans eux, le reste s'affiche quand même */ });
     document.getElementById("vues").hidden = false;
     message.hidden = true;
     document.getElementById("contenu").hidden = false;
