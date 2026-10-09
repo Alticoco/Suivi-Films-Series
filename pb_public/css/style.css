@@ -716,3 +716,32 @@ a.personne-lien:hover .personne-nom { color: #fff; text-decoration: underline; }
 .carte-saga:hover img { transform: translateY(-2px); box-shadow: var(--ombre-survol); }
 
 .barre-saga { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espace-3); margin: var(--espace-3) 0 var(--espace-2); }
+
+/* ---------- Statistiques : tuiles de temps cliquables, équivalences ---------- */
+.tuile[role="button"] { cursor: pointer; }
+.liste-equivalences .info-ligne { display: grid; grid-template-columns: minmax(10rem, 14rem) 1fr; gap: var(--espace-3); align-items: baseline; }
+.liste-equivalences dt { font-size: var(--taille-etiquette); }
+@media (max-width: 560px) { .liste-equivalences .info-ligne { grid-template-columns: 1fr; gap: 0; } }
+
+/* ---------- Fenêtre de détail d'un titre : plus large, affiche plus grande, le reste centré sous elle ---------- */
+dialog.dialogue-detail { width: min(74rem, 96vw); padding-inline: var(--espace-8); }
+.detail { grid-template-columns: 20rem minmax(0, 1fr); gap: 0 var(--espace-8); align-items: start; }
+.detail-infos, .detail-infos .recap-zone, .detail-infos .recap { display: contents; }
+.detail-affiche { grid-column: 1; grid-row: 1 / span 6; }
+.detail-infos h2, .detail-infos > p, .detail-infos .recap-genres, .detail-infos .recap-tuiles { grid-column: 2; }
+.detail-infos h2 { font-size: 1.9rem; }
+.detail-infos .recap-equipe, .detail-infos .saga, .detail-infos .detail-actions { grid-column: 1 / -1; }
+.detail-infos .recap-equipe { justify-content: center; margin-top: var(--espace-6); }
+.detail-infos .recap-groupe:last-child { flex-basis: 100%; }
+.detail-infos .personnes, .detail-infos .recap-equipe .personnes { justify-content: center; }
+.detail-infos .saga h4 { text-align: center; }
+.detail-infos .saga-films { justify-content: safe center; }
+.detail-infos .detail-actions { max-width: 44rem; width: 100%; justify-self: center; }
+@media (max-width: 900px) {
+  .detail { grid-template-columns: 1fr; }
+  .detail-affiche { grid-row: auto; position: static; max-width: 14rem; justify-self: center; }
+  .detail-infos h2, .detail-infos > p, .detail-infos .recap-genres, .detail-infos .recap-tuiles { grid-column: 1; }
+  dialog.dialogue-detail { padding-inline: var(--espace-5); }
+}
+.detail-infos .detail-actions { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.detail-infos .detail-actions form { width: 100%; text-align: left; }
