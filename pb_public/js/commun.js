@@ -428,7 +428,7 @@ function construireEntete() {
   const recherche = el("form", { class: "recherche", action: "catalogue.html", method: "get" }, champ);
   const menu = creerMenuRecherche(recherche, champ);
   champ.after(menu.bouton);
-  recherche.append(el("button", { type: "submit" }, icone("search"), "Rechercher"));
+  recherche.append(el("button", { type: "submit", class: "bouton-recherche", "aria-label": "Rechercher", title: "Rechercher" }, icone("search")));
   // Envoi : le filtre choisi décide de la page ouverte (titres filtrés ou liste de personnes)
   recherche.addEventListener("submit", (e) => {
     const texte = champ.value.trim();
