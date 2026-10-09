@@ -67,7 +67,7 @@ function avecCache(idSource, typeDonnee, chercher, versionMin) {
 // Une recherche (ou une liste de découverte) n'est pas mise en cache : c'est du direct.
 // "filtres" (facultatif) : type, genres, pays, années (voir explorer) pour retirer ce qui n'intéresse pas
 function rechercher(texte, page, filtres) {
-  return filtrerParPays(fournisseur.rechercher(texte, page, filtres), filtres || {});
+  return remplirLaPage(page || 1, (numero) => filtrerParPays(fournisseur.rechercher(texte, numero, filtres), filtres || {}));
 }
 
 function decouvrir(categorie, page) {
@@ -82,8 +82,29 @@ function decouvrir(categorie, page) {
 // (une coproduction avec un pays exclu est donc écartée).
 function explorer(parametres) {
   // Avec une personne choisie : sa filmographie (mêmes filtres) ; sinon le catalogue entier
-  const page = parametres.personne_id ? fournisseur.filmographie(parametres) : fournisseur.explorer(parametres);
-  return filtrerParPays(page, parametres);
+  const charger = (numero) => {
+    const p = Object.assign({}, parametres, { page: numero });
+    return filtrerParPays(parametres.personne_id ? fournisseur.filmographie(p) : fournisseur.explorer(p), parametres);
+  };
+  return remplirLaPage(parametres.page || 1, charger);
+}
+
+// Quand les filtres écartent beaucoup de titres, une page de la source peut ne rien donner : on regarde
+// alors les pages suivantes (jusqu'à 5 au total, 7 secondes au plus) pour avoir de quoi remplir l'écran.
+// La page renvoyée est la dernière regardée : la suite reprendra juste après.
+function remplirLaPage(premiere, chargerPage) {
+  const debut = Date.now();
+  let derniere = chargerPage(premiere);
+  const resultats = derniere.resultats.slice();
+  let numero = derniere.page;
+  while (resultats.length < 12 && numero < derniere.total_pages && numero - premiere < 4 && Date.now() - debut < 7000) {
+    numero++;
+    derniere = chargerPage(numero);
+    derniere.resultats.forEach((titre) => {
+      if (!resultats.some((x) => x.format === titre.format && x.id_source === titre.id_source)) resultats.push(titre);
+    });
+  }
+  return { page: numero, total_pages: derniere.total_pages, resultats: resultats };
 }
 
 // Écarte d'une page de résultats les titres qui ne passent pas les filtres de pays

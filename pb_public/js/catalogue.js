@@ -507,7 +507,7 @@ function resumeFiltres(choix) {
   if (inclus.length) parties.push(`avec : ${inclus.join(", ")}`);
   if (exclus.length) parties.push(`sans : ${exclus.join(", ")}`);
   if (filtres.anneeMin || filtres.anneeMax) parties.push(`${filtres.anneeMin || "…"} – ${filtres.anneeMax || "…"}`);
-  parties.push(TRIS[filtres.tri].toLowerCase());
+  if (!texteRecherche) parties.push(TRIS[filtres.tri].toLowerCase()); // le tri n'existe pas pendant une recherche par nom
   return parties.join(" · ");
 }
 
