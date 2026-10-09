@@ -210,7 +210,7 @@ fieldset { border: 1px solid var(--couleur-trait); border-radius: var(--rayon-gr
   box-shadow: var(--ombre-carte); overflow: hidden; display: flex; flex-direction: column;
   color: inherit; transition: transform var(--duree-rapide) var(--courbe), box-shadow var(--duree-rapide) var(--courbe);
 }
-.carte-lien:hover { text-decoration: none; transform: translateY(-2px); box-shadow: var(--ombre-survol); }
+.carte-lien:hover { text-decoration: none; transform: translateY(-2px) scale(1.03); z-index: 2; box-shadow: var(--ombre-survol); }
 .affiche {
   display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 2 / 3; object-fit: cover;
   background: var(--couleur-fond); color: var(--couleur-texte-discret); font-size: var(--taille-ui); text-align: center; padding: var(--espace-2);
@@ -244,7 +244,7 @@ button.carte-affiche {
   background: none; border: none; border-radius: var(--rayon-moyen); color: inherit; font-weight: 400; filter: none;
 }
 button.carte-affiche:hover, button.carte-affiche:active { filter: none; }
-.carte-affiche:hover .carte-affiche-image, .carte-affiche:focus-visible .carte-affiche-image { transform: translateY(-2px); box-shadow: var(--ombre-survol); }
+.carte-affiche:hover .carte-affiche-image, .carte-affiche:focus-visible .carte-affiche-image { transform: translateY(-2px) scale(1.04); box-shadow: var(--ombre-survol); }
 .carte-affiche-image {
   position: relative; display: block; border: 1px solid var(--couleur-trait); border-radius: var(--rayon-moyen); overflow: hidden;
   transition: transform var(--duree-rapide) var(--courbe), box-shadow var(--duree-rapide) var(--courbe);
@@ -581,12 +581,12 @@ dialog.dialogue-info { width: min(40rem, 94vw); max-height: 90vh; overflow-y: au
 .carrousel { position: relative; }
 .carrousel-piste {
   display: flex; gap: var(--espace-3); overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
-  padding: 2px 2px var(--espace-3); scrollbar-width: thin; scrollbar-color: var(--couleur-contour) transparent;
+  padding: var(--espace-2) var(--espace-2) var(--espace-3); scrollbar-width: thin; scrollbar-color: var(--couleur-contour) transparent;
 }
-.carrousel-carte { flex: 0 0 8.5rem; scroll-snap-align: start; display: flex; flex-direction: column; gap: 2px; color: inherit; }
+.carrousel-carte { flex: 0 0 8.5rem; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-start; align-self: flex-start; gap: 2px; color: inherit; }
 .carrousel-carte:hover { text-decoration: none; }
 .carrousel-cadre { position: relative; display: block; border: 1px solid var(--couleur-trait); border-radius: var(--rayon-moyen); overflow: hidden; transition: transform var(--duree-rapide) var(--courbe), box-shadow var(--duree-rapide) var(--courbe); }
-.carrousel-carte:hover .carrousel-cadre { transform: translateY(-2px); box-shadow: var(--ombre-survol); }
+.carrousel-carte:hover .carrousel-cadre { transform: translateY(-2px) scale(1.04); box-shadow: var(--ombre-survol); }
 .carrousel-affiche { display: block; width: 100%; aspect-ratio: 2 / 3; object-fit: cover; background: var(--couleur-fond); }
 .carrousel-affiche.vignette-vide { display: flex; align-items: center; justify-content: center; }
 .carrousel-badge {
@@ -605,14 +605,14 @@ button.carrousel-bouton {
 /* ---------- Saga (autres films de la série de films) ---------- */
 .saga { margin-top: var(--espace-4); padding-top: var(--espace-4); border-top: 1px solid var(--couleur-separateur); min-width: 0; }
 .saga h4 { margin: 0 0 var(--espace-2); font-family: var(--police-mono); font-size: var(--taille-etiquette); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--couleur-texte-discret); }
-.saga-films { display: flex; gap: var(--espace-3); overflow-x: auto; padding-bottom: var(--espace-2); scrollbar-width: thin; }
+.saga-films { display: flex; align-items: flex-start; gap: var(--espace-3); overflow-x: auto; padding: var(--espace-2) var(--espace-2) var(--espace-2); scrollbar-width: thin; }
 button.saga-film {
-  flex: 0 0 5.5rem; display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: 0; text-align: left;
+  flex: 0 0 5.5rem; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; align-self: flex-start; gap: 2px; padding: 0; text-align: left;
   background: none; border: none; color: inherit; font-weight: 400; filter: none;
 }
 button.saga-film:hover { filter: none; }
 .saga-affiche-cadre { position: relative; display: block; border: 1px solid var(--couleur-trait); border-radius: var(--rayon-moyen); overflow: hidden; transition: transform var(--duree-rapide) var(--courbe); }
-button.saga-film:not(:disabled):hover .saga-affiche-cadre { transform: translateY(-2px); border-color: var(--couleur-contour); }
+button.saga-film:not(:disabled):hover .saga-affiche-cadre { transform: translateY(-2px) scale(1.06); border-color: var(--couleur-contour); }
 .saga-affiche { display: block; width: 100%; aspect-ratio: 2 / 3; object-fit: cover; background: var(--couleur-fond); }
 .saga-sans-affiche { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.7rem; color: var(--couleur-texte-discret); padding: var(--espace-1); }
 .saga-courant .saga-affiche-cadre { border-color: var(--couleur-texte); }
@@ -668,7 +668,7 @@ a.recap-genre.lien-reference:hover { background: var(--couleur-onglet-doux); bor
   background: var(--couleur-carte); transition: transform var(--duree-rapide) var(--courbe), box-shadow var(--duree-rapide) var(--courbe);
 }
 .coeur-vide { display: flex; align-items: center; justify-content: center; padding: var(--espace-2); text-align: center; color: var(--couleur-texte-discret); }
-.coeur-carte:hover img { transform: translateY(-2px); box-shadow: var(--ombre-survol); }
+.coeur-carte:hover img { transform: translateY(-2px) scale(1.04); box-shadow: var(--ombre-survol); }
 /* Personnes cliquables (fiche et fenêtre de détail) : un clic ouvre tous leurs titres */
 a.personne-lien { color: inherit; border-radius: var(--rayon-moyen); padding: var(--espace-1); margin: calc(var(--espace-1) * -1); transition: background var(--duree-rapide) var(--courbe); }
 a.personne-lien:hover { text-decoration: none; background: var(--couleur-onglet-doux); }
@@ -713,7 +713,7 @@ a.personne-lien:hover .personne-nom { color: #fff; text-decoration: underline; }
   transition: transform var(--duree-rapide) var(--courbe), box-shadow var(--duree-rapide) var(--courbe);
 }
 .carte-saga-vide { display: flex; align-items: center; justify-content: center; padding: var(--espace-2); text-align: center; color: var(--couleur-texte-discret); }
-.carte-saga:hover img { transform: translateY(-2px); box-shadow: var(--ombre-survol); }
+.carte-saga:hover img { transform: translateY(-2px) scale(1.04); box-shadow: var(--ombre-survol); }
 
 .barre-saga { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espace-3); margin: var(--espace-3) 0 var(--espace-2); }
 
