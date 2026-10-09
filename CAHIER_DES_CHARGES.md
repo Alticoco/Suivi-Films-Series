@@ -77,7 +77,7 @@ Le reste du code ne connaît pas TMDB. Plus tard, on pourra ajouter TVmaze, AniL
 | `note` | nombre 0–10 | films uniquement, facultatif |
 | `commentaire` | texte | films uniquement, facultatif |
 
-- Convention technique : PocketBase stocke un nombre vide comme `0`. Pour un film, `saison` et `episode` valent donc `0` ; un épisode a toujours `episode` ≥ 1 (la saison `0` correspond aux épisodes spéciaux).
+- Convention technique : PocketBase stocke un nombre vide comme `0`. Une note `0` (ou `note_serie`, `annee`, `duree_min` à `0`) signifie donc « pas de note / inconnu ». Pour un film, `saison` et `episode` valent aussi `0` ; un épisode a toujours `episode` ≥ 1 (la saison `0` correspond aux épisodes spéciaux).
 - **Film** : une ligne par visionnage. Revoir un film = une nouvelle ligne avec une nouvelle date (historique des revisionnages, temps écoulé entre deux visionnages affiché sur la fiche).
 - **Série / animé** : une ligne par épisode coché. « Toute la saison » crée une ligne par épisode, avec la même date.
 - V1 : un épisode ne peut être coché qu'une fois (pas de revisionnage de série).

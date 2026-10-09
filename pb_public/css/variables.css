@@ -6,16 +6,20 @@
   /* Couleurs */
   --couleur-fond: #14161c;
   --couleur-fond-carte: #1e212b;
+  --couleur-fond-champ: #14161c;
   --couleur-texte: #e8e9ee;
   --couleur-texte-discret: #9a9eae;
   --couleur-accent: #e5a50a;
+  --couleur-sur-accent: #14161c; /* texte posé sur un bouton accent */
   --couleur-succes: #3fb950;
   --couleur-erreur: #f85149;
   --couleur-bordure: #2d313e;
+  --couleur-voile: rgba(0, 0, 0, 0.6); /* fond sombre derrière les fenêtres */
 
   /* Polices */
   --police-texte: "Segoe UI", system-ui, sans-serif;
   --taille-texte: 16px;
+  --taille-petit: 0.875rem;
   --taille-titre: 2rem;
 
   /* Espacements et formes */
@@ -23,4 +27,6 @@
   --espace-moyen: 1rem;
   --espace-grand: 2rem;
   --rayon: 10px;
+  --largeur-max: 1100px;
+  --largeur-carte-titre: 170px; /* largeur d'une affiche dans les grilles */
 }
