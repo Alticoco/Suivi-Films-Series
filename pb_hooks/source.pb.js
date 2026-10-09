@@ -56,6 +56,7 @@ routerAdd("GET", "/api/source/explorer", (e) => {
     annee_min: q.get("annee_min") || "", annee_max: q.get("annee_max") || "",
     tri: q.get("tri") || "populaires",
     personne_id: q.get("personne_id") || "", personne_role: q.get("personne_role") || "acteur",
+    societe_id: q.get("societe_id") || "", societe_type: q.get("societe_type") === "chaine" ? "chaine" : "studio",
     page: Math.max(1, Math.min(500, parseInt(q.get("page") || "1", 10) || 1)),
   };
   return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.explorer(parametres));

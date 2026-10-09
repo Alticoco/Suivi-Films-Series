@@ -467,15 +467,19 @@ const filtres = {
   anneeMin: (parametres.get("amin") || "").replace(/\D/g, "").slice(0, 4),
   anneeMax: (parametres.get("amax") || "").replace(/\D/g, "").slice(0, 4),
   tri: ["mieux_notes", "recents"].includes(parametres.get("tri")) ? parametres.get("tri") : "populaires",
-  // Acteur, réalisateur ou producteur choisi : { id, nom, role: "acteur" | "realisateur" | "producteur" } (ou null)
+  // Studio ou chaîne choisi (lien depuis une fiche) : { id, nom, type: "studio" | "chaine" } (ou null)
+  societe: /^[0-9]+$/.test(parametres.get("soc") || "")
+    ? { id: parametres.get("soc"), nom: (parametres.get("snom") || "").slice(0, 80), type: parametres.get("stype") === "chaine" ? "chaine" : "studio" }
+    : null,
+  // Acteur ou réalisateur choisi : { id, nom, role: "acteur" | "realisateur" | "producteur" } (ou null)
   personne: /^[0-9]+$/.test(parametres.get("pers") || "")
     ? { id: parametres.get("pers"), nom: (parametres.get("pnom") || "").slice(0, 80), role: rolePersonne(parametres.get("prole")) }
     : null,
 };
 // Pendant une recherche par nom, les filtres servent à retirer ce qui n'intéresse pas (type, genres, pays, années)
-const clesFiltres = texteRecherche ? ["type", "gi", "ge", "pi", "pe", "amin", "amax"] : ["type", "gi", "ge", "pi", "pe", "amin", "amax", "tri", "pers"];
+const clesFiltres = texteRecherche ? ["type", "gi", "ge", "pi", "pe", "amin", "amax"] : ["type", "gi", "ge", "pi", "pe", "amin", "amax", "tri", "pers", "soc"];
 const filtresActifs = clesFiltres.some((cle) => parametres.has(cle));
-if (texteRecherche) { filtres.personne = null; filtres.tri = "populaires"; }
+if (texteRecherche) { filtres.personne = null; filtres.societe = null; filtres.tri = "populaires"; }
 
 const TRIS = { populaires: "Les plus populaires", mieux_notes: "Les mieux notés", recents: "Les plus récents" };
 const cleDe = (etat, valeur) => Object.keys(etat).filter((cle) => etat[cle] === valeur).join(",");
@@ -487,6 +491,7 @@ function parametresExplorer(page) {
     ["pays_inclus", cleDe(filtres.pays, 1)], ["pays_exclus", cleDe(filtres.pays, -1)],
     ["annee_min", filtres.anneeMin], ["annee_max", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
   if (filtres.personne) { p.set("personne_id", filtres.personne.id); p.set("personne_role", filtres.personne.role); }
+  if (filtres.societe) { p.set("societe_id", filtres.societe.id); p.set("societe_type", filtres.societe.type); }
   return p.toString();
 }
 
@@ -499,20 +504,22 @@ function adresseFiltres() {
     ["amin", filtres.anneeMin], ["amax", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
   if (filtres.tri !== "populaires") p.set("tri", filtres.tri);
   if (filtres.personne) { p.set("pers", filtres.personne.id); p.set("pnom", filtres.personne.nom); p.set("prole", filtres.personne.role); }
+  if (filtres.societe) { p.set("soc", filtres.societe.id); p.set("snom", filtres.societe.nom); p.set("stype", filtres.societe.type); }
   return p.toString() ? `catalogue.html?${p}` : "catalogue.html";
 }
 
 const nombreFiltres = () => Object.keys(filtres.genres).length + Object.keys(filtres.pays).length
   + (filtres.type !== "tous" ? 1 : 0) + (filtres.anneeMin || filtres.anneeMax ? 1 : 0) + (filtres.tri !== "populaires" ? 1 : 0)
-  + (filtres.personne ? 1 : 0);
+  + (filtres.personne ? 1 : 0) + (filtres.societe ? 1 : 0);
 
 // Une phrase qui résume les filtres actifs (affichée au-dessus de la grille)
 function resumeFiltres(choix) {
-  const nom = (cle) => (choix.genres.concat(choix.pays, choix.regions).find((x) => x.cle === cle) || {}).libelle || cle;
+  const nom = (cle) => (choix.genres.concat(choix.pays, choix.regions).find((x) => x.cle === cle) || {}).libelle || (/^[A-Z]{2}$/.test(cle) ? nomPays(cle) : cle);
   const liste = (a, b) => [a, b].join(",").split(",").filter((x) => x).map(nom);
   const parties = [];
   if (filtres.type !== "tous") parties.push(filtres.type === "film" ? "films" : "séries");
   if (filtres.personne) parties.push(`${{ realisateur: "réalisés par", producteur: "produits par", acteur: "avec" }[filtres.personne.role]} ${filtres.personne.nom}`);
+  if (filtres.societe) parties.push(`${filtres.societe.type === "chaine" ? "diffusés sur" : "du studio"} ${filtres.societe.nom}`);
   const inclus = liste(cleDe(filtres.genres, 1), cleDe(filtres.pays, 1));
   const exclus = liste(cleDe(filtres.genres, -1), cleDe(filtres.pays, -1));
   if (inclus.length) parties.push(`avec : ${inclus.join(", ")}`);
@@ -594,6 +601,9 @@ function construirePanneauFiltres(choix) {
     el("p", { class: "discret" }, "Clique une fois sur une puce pour l'inclure (elle devient verte), deux fois pour l'exclure (rouge), trois fois pour la retirer."),
     radiosType,
     texteRecherche ? el("p", { class: "discret" }, "Ces filtres retirent des résultats de ta recherche ce qui ne t'intéresse pas.") : creerChampPersonne(majCompteur),
+    filtres.societe ? el("div", { class: "champ" }, el("label", {}, filtres.societe.type === "chaine" ? "Chaîne / plateforme" : "Studio"),
+      el("p", { class: "personne-etiquette" }, icone("check"), el("strong", {}, filtres.societe.nom),
+        el("button", { type: "button", class: "lien", onclick: () => { filtres.societe = null; location.href = adresseFiltres(); } }, "Retirer"))) : null,
     el("div", { class: "champ" }, el("label", {}, "Genres (le titre doit avoir tous les genres inclus)"), groupePuces(choix.genres, filtres.genres),
       el("p", { class: "discret" }, "Horreur, Thriller, Romance, Histoire et Musique n'existent que pour les films : les inclure masque les séries.")),
     el("div", { class: "champ" }, el("label", {}, "Régions (au moins une des régions incluses)"), groupePuces(choix.regions, filtres.pays)),

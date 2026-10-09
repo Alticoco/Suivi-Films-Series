@@ -173,8 +173,18 @@ function decouvrir(categorie, page) {
 }
 
 // Version du format de "details" : un titre déjà en cache avec un format plus ancien est rechargé.
-// (v2 : distribution, réalisateur, studio, box-office, pays, classification ; v3 : saga / collection)
-const VERSION_DETAILS = 3;
+// (v2 : distribution, réalisateur, studio, box-office, pays, classification ; v3 : saga / collection ;
+//  v5 : identifiant des studios / chaînes, pour retrouver tous leurs titres)
+const VERSION_DETAILS = 5;
+
+// Les 2 premiers studios (films) ou chaînes / plateformes (séries), avec leur identifiant TMDB
+// type "studio" → filtre « with_companies » ; type "chaine" → filtre « with_networks »
+function societes(d, films) {
+  const versListe = (liste, type) => (liste || []).slice(0, 2).filter((x) => x.id && x.name).map((x) => ({ id: String(x.id), nom: x.name, type: type }));
+  if (films) return versListe(d.production_companies, "studio");
+  const chaines = versListe(d.networks, "chaine");
+  return chaines.length ? chaines : versListe(d.production_companies, "studio");
+}
 
 function personne(p) {
   return { nom: p.name || "", photo: p.profile_path || null };
@@ -261,6 +271,8 @@ function details(format, idSource) {
     collection: films && d.belongs_to_collection ? { id: String(d.belongs_to_collection.id), nom: d.belongs_to_collection.name || "" } : null,
     // Récapitulatif : studio, box-office, classification, équipe et distribution
     studio: films ? noms(d.production_companies) : noms(d.networks) || noms(d.production_companies),
+    // Les mêmes sociétés avec leur identifiant : films = studios ; séries = chaînes / plateformes (sinon studios)
+    societes: societes(d, films),
     box_office: films ? d.revenue || 0 : 0,   // en dollars ; 0 = inconnu
     budget: films ? d.budget || 0 : 0,
     classification: classification(d, films),
@@ -335,6 +347,7 @@ function codesDe(cles) {
   for (const cle of cles) {
     const trouve = PAYS.find((p) => p[0] === cle) || REGIONS.find((r) => r[0] === cle);
     if (trouve) trouve[2].forEach((code) => { resultat[code] = true; });
+    else if (/^[A-Z]{2}$/.test(cle)) resultat[cle] = true; // code ISO direct (lien depuis une fiche)
   }
   return resultat;
 }
@@ -373,6 +386,13 @@ function pageExplorer(format, p) {
     without_genres: uniques(exclus).join("|"),       // barre = « n'importe lequel de ces genres »
     with_origin_country: pays ? pays.join("|") : "", // barre = « n'importe lequel de ces pays »
   };
+  // Un studio (with_companies) ou une chaîne de télévision (with_networks, séries seulement)
+  if (/^[0-9]+$/.test(p.societe_id || "")) {
+    if (p.societe_type === "chaine") {
+      if (!film) parametres.with_networks = p.societe_id;
+      else return null; // une chaîne ne produit pas de films au cinéma
+    } else parametres.with_companies = p.societe_id;
+  }
   if (p.annee_min) parametres[`${champDate}.gte`] = `${parseInt(p.annee_min, 10)}-01-01`;
   if (p.annee_max) parametres[`${champDate}.lte`] = `${parseInt(p.annee_max, 10)}-12-31`;
   if (p.tri === "mieux_notes") {
