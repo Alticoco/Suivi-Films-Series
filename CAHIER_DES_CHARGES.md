@@ -25,7 +25,7 @@ Site perso, pour un seul utilisateur et un usage non commercial, qui tourne **en
 | Interface | **HTML / CSS / JavaScript simple**, sans framework ni étape de compilation, servie par PocketBase (`pb_public/`) |
 | Logique serveur | Hooks JavaScript de PocketBase (`pb_hooks/`) |
 | Accès | Serveur lié à `127.0.0.1` uniquement (invisible depuis le réseau), port 8090 |
-| Démarrage | **Automatique avec Windows**, en arrière-plan, sans fenêtre. J'ouvre simplement un favori `http://127.0.0.1:8090` |
+| Démarrage | **Manuel, par un raccourci sur le Bureau** : un double-clic lance PocketBase en arrière-plan (sans fenêtre, `127.0.0.1` uniquement) et ouvre le site dans le navigateur ; si PocketBase tourne déjà, il ouvre juste le site. Pas de démarrage automatique avec Windows. Un second raccourci « Arrêter » coupe le serveur |
 | Comptes | Aucun. Un compte administrateur PocketBase créé une fois pour l'interface d'admin, c'est tout |
 | Clé TMDB | Dans un fichier local non versionné, lue par le serveur. **Jamais envoyée au navigateur** : le navigateur passe par les routes du serveur |
 | Export / import Excel | Bibliothèque type SheetJS, copiée localement |
@@ -158,7 +158,7 @@ Bandeau sur le tableau de bord si le dernier export date de **plus de 30 jours**
 
 Chaque étape se termine par un test de ma part et un commit.
 
-1. **Installation** — structure du projet, `.gitignore`, PocketBase, fichier local pour le jeton TMDB, démarrage automatique et invisible avec Windows, page d'accueil « ça marche ».
+1. **Installation** — structure du projet, `.gitignore`, PocketBase, fichier local pour le jeton TMDB, raccourcis Bureau « Lancer » (démarre PocketBase en arrière-plan et ouvre le site) et « Arrêter », page d'accueil « ça marche ».
 2. **Données** — création des collections et du module source TMDB (recherche, détails, saisons, cache).
 3. **Catalogue** — recherche et ajout d'un titre (à voir / vu), ajout manuel.
 4. **Fiche film** — bouton « Vu » avec date, note, commentaire, vu avant ; historique des visionnages.

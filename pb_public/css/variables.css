@@ -1,0 +1,26 @@
+/* ==========================================================
+   VARIABLES DE DESIGN — le seul endroit à modifier pour
+   changer l'apparence du site (couleurs, polices, espacements).
+   ========================================================== */
+:root {
+  /* Couleurs */
+  --couleur-fond: #14161c;
+  --couleur-fond-carte: #1e212b;
+  --couleur-texte: #e8e9ee;
+  --couleur-texte-discret: #9a9eae;
+  --couleur-accent: #e5a50a;
+  --couleur-succes: #3fb950;
+  --couleur-erreur: #f85149;
+  --couleur-bordure: #2d313e;
+
+  /* Polices */
+  --police-texte: "Segoe UI", system-ui, sans-serif;
+  --taille-texte: 16px;
+  --taille-titre: 2rem;
+
+  /* Espacements et formes */
+  --espace-petit: 0.5rem;
+  --espace-moyen: 1rem;
+  --espace-grand: 2rem;
+  --rayon: 10px;
+}
