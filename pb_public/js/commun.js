@@ -179,6 +179,39 @@ async function enParallele(elements, travail, progression) {
   await Promise.all([ouvrier(), ouvrier(), ouvrier(), ouvrier()]);
 }
 
+// ---------- Coup de cœur ----------
+// Bouton cœur d'un titre. "lireTitre" renvoie le titre à jour (l'objet peut être remplacé par un plus récent).
+// "apres" est appelé une fois le changement enregistré.
+function creerBoutonCoeur(lireTitre, apres) {
+  const bouton = el("button", { type: "button", class: "coeur" });
+  const dessiner = () => {
+    const actif = !!lireTitre().coup_de_coeur;
+    bouton.classList.toggle("actif", actif);
+    bouton.setAttribute("aria-pressed", String(actif));
+    bouton.title = actif ? "Retirer des coups de cœur" : "Ajouter aux coups de cœur";
+    bouton.setAttribute("aria-label", bouton.title);
+    bouton.replaceChildren(icone("heart"));
+  };
+  bouton.addEventListener("click", async (evenement) => {
+    evenement.preventDefault(); // le bouton peut se trouver dans une carte cliquable
+    evenement.stopPropagation();
+    bouton.disabled = true;
+    try {
+      const titre = lireTitre();
+      const misAJour = await pbModifier("titres", titre.id, { coup_de_coeur: !titre.coup_de_coeur });
+      titre.coup_de_coeur = misAJour.coup_de_coeur;
+      toast(titre.coup_de_coeur ? `« ${titre.titre} » ajouté à tes coups de cœur.` : `« ${titre.titre} » retiré des coups de cœur.`);
+      if (apres) apres();
+    } catch (erreur) {
+      toast(erreur.message, true);
+    }
+    bouton.disabled = false;
+    dessiner();
+  });
+  dessiner();
+  return bouton;
+}
+
 // ---------- Messages éphémères ----------
 function toast(texte, erreur) {
   const message = el("div", { class: "toast" + (erreur ? " toast-erreur" : "") }, texte);

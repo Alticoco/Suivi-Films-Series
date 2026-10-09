@@ -8,7 +8,7 @@
 const FEUILLE_HISTORIQUE = "Historique";
 const FEUILLE_TITRES = "Mes titres";
 const ENTETES_HISTORIQUE = ["Titre", "Année", "Type", "Date", "Saison", "Épisode", "Note", "Commentaire", "Statut actuel", "Identifiant"];
-const ENTETES_TITRES = ["Titre", "Année", "Type", "Statut", "Vu avant", "Note série", "Notes", "Durée (min)", "Identifiant"];
+const ENTETES_TITRES = ["Titre", "Année", "Type", "Statut", "Vu avant", "Coup de cœur", "Note série", "Notes", "Durée (min)", "Identifiant"];
 const TEXTE_VU_AVANT = "Vu avant";
 
 // ---------- Chargement de la bibliothèque Excel (copie locale) ----------
@@ -54,7 +54,7 @@ function construireFeuilles(titres, visionnages) {
 
   const lignesTitres = [...titres]
     .sort((a, b) => a.titre.localeCompare(b.titre, "fr"))
-    .map((t) => [t.titre, vide(t.annee), LIBELLES_TYPE[t.type], LIBELLES_STATUT[t.statut], t.vu_avant ? "Oui" : "Non",
+    .map((t) => [t.titre, vide(t.annee), LIBELLES_TYPE[t.type], LIBELLES_STATUT[t.statut], t.vu_avant ? "Oui" : "Non", t.coup_de_coeur ? "Oui" : "Non",
       vide(t.note_serie), t.notes || "", vide(t.duree_min), identifiantTitre(t)]);
 
   return {
@@ -93,7 +93,7 @@ function construireClasseur(titres, visionnages) {
   const feuilles = construireFeuilles(titres, visionnages);
   const classeur = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(classeur, feuilleExcel(feuilles.historique, [34, 7, 8, 12, 7, 8, 6, 40, 12, 22]), FEUILLE_HISTORIQUE);
-  XLSX.utils.book_append_sheet(classeur, feuilleExcel(feuilles.titres, [34, 7, 8, 12, 9, 10, 40, 11, 22]), FEUILLE_TITRES);
+  XLSX.utils.book_append_sheet(classeur, feuilleExcel(feuilles.titres, [34, 7, 8, 12, 9, 12, 10, 40, 11, 22]), FEUILLE_TITRES);
   return classeur;
 }
 

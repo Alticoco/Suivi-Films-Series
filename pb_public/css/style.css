@@ -456,9 +456,11 @@ input[type="file"]::file-selector-button {
 }
 .puce:hover { color: var(--couleur-texte); border-color: var(--couleur-texte-discret); filter: none; }
 .puce .icone { width: 0.9em; height: 0.9em; }
-/* Inclus : menthe (état positif) · Exclu : barré, sans couleur d'alerte */
-.puce-incluse { color: var(--couleur-menthe); border-color: var(--couleur-menthe); background: var(--couleur-menthe-douce); }
-.puce-exclue { color: var(--couleur-texte-discret); border-style: dashed; text-decoration: line-through; }
+/* Inclus = vert, exclu = rouge : la couleur seule indique l'état, pour bien ressortir */
+.puce-incluse { color: var(--couleur-menthe); border-color: var(--couleur-menthe); background: var(--couleur-menthe-forte); font-weight: 600; }
+.puce-exclue { color: var(--couleur-erreur); border-color: var(--couleur-erreur); background: var(--couleur-erreur-douce); font-weight: 600; }
+.puce-incluse:hover { color: var(--couleur-menthe); border-color: var(--couleur-menthe); }
+.puce-exclue:hover { color: var(--couleur-erreur); border-color: var(--couleur-erreur); }
 .ligne-filtres { display: flex; flex-wrap: wrap; gap: var(--espace-6); }
 .champ-annees { display: flex; align-items: center; gap: var(--espace-2); }
 .champ-annees input { width: 6rem; }
@@ -491,3 +493,35 @@ input[type="file"]::file-selector-button {
 .personne-nom { font-size: 0.75rem; font-weight: 500; line-height: 1.25; overflow-wrap: anywhere; }
 .personne-role { font-size: 0.68rem; color: var(--couleur-texte-discret); line-height: 1.2; overflow-wrap: anywhere; }
 @media (max-width: 700px) { .recap-equipe { justify-content: center; } .personnes { flex-wrap: wrap; justify-content: center; } }
+
+/* ---------- Coups de cœur ---------- */
+button.coeur {
+  width: 2.2rem; height: 2.2rem; padding: 0; border-radius: var(--rayon-pilule);
+  background: transparent; border: 1px solid transparent; color: var(--couleur-texte-discret); flex-shrink: 0;
+}
+button.coeur:hover { color: var(--couleur-texte); filter: none; }
+button.coeur .icone { width: 1.2rem; height: 1.2rem; }
+button.coeur.actif { color: var(--couleur-erreur); }
+button.coeur.actif .icone { fill: var(--couleur-erreur); }
+.titre-fiche { display: flex; align-items: center; gap: var(--espace-3); }
+.titre-fiche h1 { margin: 0; }
+.carte-conteneur { position: relative; display: flex; flex-direction: column; }
+.carte-conteneur > .carte-titre { flex: 1; }
+.carte-conteneur > button.coeur {
+  position: absolute; top: var(--espace-2); right: var(--espace-2);
+  background: var(--couleur-voile); border-color: var(--couleur-trait);
+}
+
+/* ---------- Filtre « acteur ou réalisateur » ---------- */
+.recherche-personne { display: flex; gap: var(--espace-2); max-width: 32rem; }
+.recherche-personne input { flex: 1; min-width: 0; }
+.personnes-trouvees { display: flex; flex-wrap: wrap; gap: var(--espace-2); margin-top: var(--espace-2); }
+button.personne-trouvee {
+  display: flex; align-items: center; gap: var(--espace-3); padding: var(--espace-2) var(--espace-3); text-align: left;
+  background: var(--couleur-fond); border: 1px solid var(--couleur-trait); border-radius: var(--rayon-moyen); width: min(100%, 20rem);
+}
+button.personne-trouvee:hover { border-color: var(--couleur-contour); }
+.personne-trouvee-texte { display: flex; flex-direction: column; min-width: 0; font-size: var(--taille-ui); }
+.personne-trouvee-texte .discret { font-size: 0.72rem; }
+.personne-etiquette { display: flex; align-items: center; gap: var(--espace-2); margin: var(--espace-2) 0 0; color: var(--couleur-menthe); }
+.personne-choisie fieldset { margin-top: var(--espace-2); max-width: 32rem; }

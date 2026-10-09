@@ -93,6 +93,7 @@ async function lireFichierImport(fichier) {
       annee: nombre(ligne["Année"]),
       type, statut,
       vu_avant: ["oui", "true", "1", "vrai"].includes(sansAccent(ligne["Vu avant"])),
+      coup_de_coeur: ["oui", "true", "1", "vrai"].includes(sansAccent(ligne["Coup de cœur"])), // absent des anciens exports : « non »
       note_serie: nombre(ligne["Note série"]),
       notes: texte(ligne["Notes"]),
       duree_min: nombre(ligne["Durée (min)"]),
@@ -160,7 +161,7 @@ async function apercuImport(donnees) {
 function champsTitre(t) {
   const champs = {
     source: t.id.source, type: t.type, titre: t.titre, annee: t.annee, statut: t.statut,
-    vu_avant: t.vu_avant, note_serie: t.note_serie, notes: t.notes, duree_min: t.duree_min,
+    vu_avant: t.vu_avant, coup_de_coeur: t.coup_de_coeur, note_serie: t.note_serie, notes: t.notes, duree_min: t.duree_min,
   };
   if (t.id.source === "tmdb") {
     champs.id_source = t.id.idSource;
