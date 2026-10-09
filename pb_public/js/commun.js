@@ -1,0 +1,210 @@
+// Briques communes à toutes les pages :
+//  - en-tête (navigation + recherche) et pied de page (mention TMDB)
+//  - petites fonctions pour construire du HTML et parler au serveur
+
+// ---------- Construire du HTML sans risque ----------
+// el("p", {class: "discret"}, "texte", autreElement)
+// Les textes sont insérés comme du TEXTE (jamais interprétés comme du HTML).
+function el(balise, attributs, ...enfants) {
+  const element = document.createElement(balise);
+  for (const [nom, valeur] of Object.entries(attributs || {})) {
+    if (nom === "class") element.className = valeur;
+    else if (nom.startsWith("on")) element.addEventListener(nom.slice(2), valeur);
+    else if (valeur === true) element.setAttribute(nom, "");
+    else if (valeur !== false && valeur !== null && valeur !== undefined) element.setAttribute(nom, valeur);
+  }
+  for (const enfant of enfants.flat()) {
+    if (enfant !== null && enfant !== undefined && enfant !== false) element.append(enfant);
+  }
+  return element;
+}
+
+// ---------- Parler au serveur ----------
+// Transforme une erreur de PocketBase ou de la source en phrase lisible.
+function messageErreur(donnees, statut) {
+  if (!donnees) return `Erreur du serveur (${statut})`;
+  const details = Object.entries(donnees.data || {}).map(([champ, e]) => `${champ} : ${e.message}`);
+  return [donnees.message, ...details].filter(Boolean).join(" — ");
+}
+
+async function requete(url, options) {
+  let reponse;
+  try {
+    reponse = await fetch(url, options);
+  } catch (erreur) {
+    throw new Error("Le serveur ne répond pas. Est-il lancé ?");
+  }
+  let donnees = null;
+  try { donnees = await reponse.json(); } catch (erreur) { /* réponse vide (ex. suppression) */ }
+  if (!reponse.ok) throw new Error(messageErreur(donnees, reponse.status));
+  return donnees;
+}
+
+// Appel à la source de données (TMDB) via le serveur : source("rechercher?q=matrix")
+function source(chemin) {
+  return requete(`/api/source/${chemin}`);
+}
+
+// Liste complète d'une collection PocketBase (filtre facultatif).
+async function pbListe(collection, filtre) {
+  const resultat = [];
+  let page = 1;
+  while (true) {
+    let url = `/api/collections/${collection}/records?perPage=500&page=${page}`;
+    if (filtre) url += `&filter=${encodeURIComponent(filtre)}`;
+    const reponse = await requete(url);
+    resultat.push(...reponse.items);
+    if (page >= reponse.totalPages) return resultat;
+    page++;
+  }
+}
+
+// Crée un enregistrement. "donnees" = objet simple, ou FormData (pour envoyer un fichier).
+function pbCreer(collection, donnees) {
+  const estFormulaire = donnees instanceof FormData;
+  return requete(`/api/collections/${collection}/records`, {
+    method: "POST",
+    headers: estFormulaire ? {} : { "Content-Type": "application/json" },
+    body: estFormulaire ? donnees : JSON.stringify(donnees),
+  });
+}
+
+function pbLire(collection, id) {
+  return requete(`/api/collections/${collection}/records/${id}`);
+}
+
+// Modifie un enregistrement. "donnees" = objet simple, ou FormData (pour envoyer un fichier).
+function pbModifier(collection, id, donnees) {
+  const estFormulaire = donnees instanceof FormData;
+  return requete(`/api/collections/${collection}/records/${id}`, {
+    method: "PATCH",
+    headers: estFormulaire ? {} : { "Content-Type": "application/json" },
+    body: estFormulaire ? donnees : JSON.stringify(donnees),
+  });
+}
+
+function pbSupprimer(collection, id) {
+  return requete(`/api/collections/${collection}/records/${id}`, { method: "DELETE" });
+}
+
+// ---------- Libellés ----------
+const LIBELLES_TYPE = { film: "Film", serie: "Série", anime: "Animé" };
+const LIBELLES_STATUT = {
+  a_voir: "À voir", en_cours: "En cours", termine: "Terminé", en_pause: "En pause", abandonne: "Abandonné",
+};
+
+// ---------- Images et dates ----------
+// Les affiches sont chargées directement chez TMDB (jamais stockées chez moi).
+function urlAffiche(chemin, taille) {
+  return chemin ? `https://image.tmdb.org/t/p/${taille || "w185"}${chemin}` : null;
+}
+
+// Image d'un de mes titres : la mienne si j'en ai mis une, sinon l'affiche TMDB (ou null).
+function urlImageTitre(titre, affiche, taille) {
+  if (titre.image_perso) return `/api/files/titres/${titre.id}/${encodeURIComponent(titre.image_perso)}`;
+  return urlAffiche(affiche, taille);
+}
+
+// Un film (TMDB), ou un titre manuel de type film. Un animé « film » compte aussi.
+function estFilm(titre) {
+  return titre.source === "tmdb" ? titre.format_source === "film" : titre.type === "film";
+}
+
+// Date du jour au format AAAA-MM-JJ (heure locale)
+function dateDuJour() {
+  const d = new Date();
+  const deuxChiffres = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${deuxChiffres(d.getMonth() + 1)}-${deuxChiffres(d.getDate())}`;
+}
+
+// "2026-10-09 00:00:00.000Z" (ou "2026-10-09") → "09/10/2026"
+function formatDate(date) {
+  const [annee, mois, jour] = String(date).slice(0, 10).split("-");
+  return `${jour}/${mois}/${annee}`;
+}
+
+// 136 → "2 h 16 min"
+function formatDuree(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (!h) return `${m} min`;
+  return m ? `${h} h ${String(m).padStart(2, "0")} min` : `${h} h`;
+}
+
+// Temps écoulé entre deux dates (AAAA-MM-JJ), en français : "2 ans et 3 mois", "12 jours"...
+function dureeEntre(debut, fin) {
+  const [a1, m1, j1] = debut.slice(0, 10).split("-").map(Number);
+  const [a2, m2, j2] = fin.slice(0, 10).split("-").map(Number);
+  let annees = a2 - a1;
+  let mois = m2 - m1;
+  let jours = j2 - j1;
+  if (jours < 0) {
+    mois--;
+    jours += new Date(Date.UTC(a2, m2 - 1, 0)).getUTCDate(); // nombre de jours du mois précédent
+  }
+  if (mois < 0) {
+    annees--;
+    mois += 12;
+  }
+  const morceaux = [];
+  if (annees) morceaux.push(`${annees} an${annees > 1 ? "s" : ""}`);
+  if (mois) morceaux.push(`${mois} mois`);
+  if (!annees && jours) morceaux.push(`${jours} jour${jours > 1 ? "s" : ""}`);
+  return morceaux.length ? morceaux.join(" et ") : "le même jour";
+}
+
+// Statistiques calculées par le serveur. Si des durées manquent (titres pas encore en cache),
+// on les fait charger par la source (le serveur les mémorise), puis on redemande les chiffres.
+async function chargerStatistiques() {
+  let stats = await requete("/api/perso/statistiques");
+  if (stats.manquants.length) {
+    await Promise.all(stats.manquants.map((m) => source(`details/${m.format}/${m.id_source}`).catch(() => null)));
+    stats = await requete("/api/perso/statistiques");
+  }
+  return stats;
+}
+
+// ---------- Messages éphémères ----------
+function toast(texte, erreur) {
+  const message = el("div", { class: "toast" + (erreur ? " toast-erreur" : "") }, texte);
+  document.body.append(message);
+  setTimeout(() => message.remove(), erreur ? 6000 : 3500);
+}
+
+// ---------- En-tête et pied de page ----------
+const PAGES = [
+  { nom: "Accueil", url: "index.html", dispo: true },
+  { nom: "Catalogue", url: "catalogue.html", dispo: true },
+  { nom: "Ma bibliothèque", url: "bibliotheque.html", dispo: true },
+  { nom: "Journal", url: "journal.html", dispo: true },
+  { nom: "Statistiques", url: "statistiques.html", dispo: true },
+  { nom: "Sauvegarde", url: "sauvegarde.html", dispo: true },
+];
+
+function construireEntete() {
+  const pageCourante = location.pathname.split("/").pop() || "index.html";
+  const liens = PAGES.map((page) => {
+    if (!page.dispo) return el("span", { class: "nav-bientot", title: "Bientôt disponible" }, page.nom);
+    return el("a", { href: page.url, class: page.url === pageCourante ? "nav-actif" : "" }, page.nom);
+  });
+  const q = new URLSearchParams(location.search).get("q") || "";
+  const recherche = el("form", { class: "recherche", action: "catalogue.html", method: "get" },
+    el("input", { type: "search", name: "q", value: q, placeholder: "Rechercher un film ou une série…", "aria-label": "Rechercher" }),
+    el("button", { type: "submit" }, "Rechercher"));
+  return el("header", { class: "entete" },
+    el("div", { class: "entete-contenu" },
+      el("a", { href: "index.html", class: "logo" }, "🎬 Suivi Films & Séries"),
+      el("nav", {}, liens),
+      recherche));
+}
+
+function construirePied() {
+  return el("footer", { class: "pied" },
+    el("img", { class: "logo-tmdb", src: "img/tmdb-logo.svg", alt: "The Movie Database (TMDB)", loading: "lazy" }),
+    el("p", { class: "discret" }, "This product uses the TMDB API but is not endorsed or certified by TMDB."));
+}
+
+// Icône de l'onglet (la même sur toutes les pages)
+document.head.append(el("link", { rel: "icon", type: "image/svg+xml", href: "img/favicon.svg" }));
+document.body.prepend(construireEntete());
+document.body.append(construirePied());

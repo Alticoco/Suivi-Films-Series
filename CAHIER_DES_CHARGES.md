@@ -25,7 +25,7 @@ Site perso, pour un seul utilisateur et un usage non commercial, qui tourne **en
 | Interface | **HTML / CSS / JavaScript simple**, sans framework ni étape de compilation, servie par PocketBase (`pb_public/`) |
 | Logique serveur | Hooks JavaScript de PocketBase (`pb_hooks/`) |
 | Accès | Serveur lié à `127.0.0.1` uniquement (invisible depuis le réseau), port 8090 |
-| Démarrage | **Automatique avec Windows**, en arrière-plan, sans fenêtre. J'ouvre simplement un favori `http://127.0.0.1:8090` |
+| Démarrage | **Manuel, par un raccourci sur le Bureau** : un double-clic lance PocketBase en arrière-plan (sans fenêtre, `127.0.0.1` uniquement) et ouvre le site dans le navigateur ; si PocketBase tourne déjà, il ouvre juste le site. Pas de démarrage automatique avec Windows. Un second raccourci « Arrêter » coupe le serveur |
 | Comptes | Aucun. Un compte administrateur PocketBase créé une fois pour l'interface d'admin, c'est tout |
 | Clé TMDB | Dans un fichier local non versionné, lue par le serveur. **Jamais envoyée au navigateur** : le navigateur passe par les routes du serveur |
 | Export / import Excel | Bibliothèque type SheetJS, copiée localement |
@@ -55,6 +55,7 @@ Le reste du code ne connaît pas TMDB. Plus tard, on pourra ajouter TVmaze, AniL
 |---|---|---|
 | `source` | texte | `tmdb` ou `manuel` |
 | `id_source` | texte | vide si manuel |
+| `format_source` | choix | `film` ou `serie` côté TMDB (un film et une série peuvent avoir le même numéro ; un animé peut être l'un ou l'autre). Vide si manuel |
 | `type` | choix | `film`, `serie`, `anime` |
 | `titre` | texte | titre français au moment de l'ajout (sert de repère dans l'export) |
 | `annee` | nombre | année de sortie |
@@ -76,6 +77,7 @@ Le reste du code ne connaît pas TMDB. Plus tard, on pourra ajouter TVmaze, AniL
 | `note` | nombre 0–10 | films uniquement, facultatif |
 | `commentaire` | texte | films uniquement, facultatif |
 
+- Convention technique : PocketBase stocke un nombre vide comme `0`. Une note `0` (ou `note_serie`, `annee`, `duree_min` à `0`) signifie donc « pas de note / inconnu ». Pour un film, `saison` et `episode` valent aussi `0` ; un épisode a toujours `episode` ≥ 1 (la saison `0` correspond aux épisodes spéciaux).
 - **Film** : une ligne par visionnage. Revoir un film = une nouvelle ligne avec une nouvelle date (historique des revisionnages, temps écoulé entre deux visionnages affiché sur la fiche).
 - **Série / animé** : une ligne par épisode coché. « Toute la saison » crée une ligne par épisode, avec la même date.
 - V1 : un épisode ne peut être coché qu'une fois (pas de revisionnage de série).
@@ -132,9 +134,10 @@ En-tête commun : navigation + barre de recherche. Pied de page : logo et mentio
 ### Export Excel (.xlsx), lisible par un humain
 
 - **Feuille « Historique »** : une ligne par visionnage — Titre, Année, Type, Date (jj/mm/aaaa), Saison, Épisode, Note, Commentaire, Statut actuel du titre.
-- **Feuille « Mes titres »** : une ligne par titre — Titre, Année, Type, Statut, Vu avant, Note série, Notes.
+- **Feuille « Mes titres »** : une ligne par titre — Titre, Année, Type, Statut, Vu avant, Note série, Notes, Durée (min) (colonne ajoutée : nécessaire pour ne pas perdre la durée des titres manuels).
+- Les images ajoutées à la main (`image_perso`) ne sont pas dans l'export.
 - Les titres « vu avant » apparaissent dans l'historique avec « Vu avant » à la place de la date.
-- Une seule colonne technique, **en dernier** : `Identifiant` (ex. `tmdb:1399` ou `manuel:xxxx`), indispensable pour l'import.
+- Une seule colonne technique, **en dernier** : `Identifiant` (ex. `tmdb:serie:1399`, `tmdb:film:603` ou `manuel:xxxx`), indispensable pour l'import.
 - Nom du fichier : `suivi-films-series_AAAA-MM-JJ.xlsx`.
 
 ### Import
@@ -158,7 +161,7 @@ Bandeau sur le tableau de bord si le dernier export date de **plus de 30 jours**
 
 Chaque étape se termine par un test de ma part et un commit.
 
-1. **Installation** — structure du projet, `.gitignore`, PocketBase, fichier local pour le jeton TMDB, démarrage automatique et invisible avec Windows, page d'accueil « ça marche ».
+1. **Installation** — structure du projet, `.gitignore`, PocketBase, fichier local pour le jeton TMDB, raccourcis Bureau « Lancer » (démarre PocketBase en arrière-plan et ouvre le site) et « Arrêter », page d'accueil « ça marche ».
 2. **Données** — création des collections et du module source TMDB (recherche, détails, saisons, cache).
 3. **Catalogue** — recherche et ajout d'un titre (à voir / vu), ajout manuel.
 4. **Fiche film** — bouton « Vu » avec date, note, commentaire, vu avant ; historique des visionnages.

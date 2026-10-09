@@ -1,0 +1,28 @@
+# --- Ne JAMAIS publier sur GitHub ---
+
+# Jeton / clé TMDB (le fichier d'exemple reste, lui, versionné)
+secrets/*
+!secrets/tmdb_token.exemple.txt
+
+# Données de PocketBase (ma base : mes titres, mes visionnages)
+pb_data/
+
+# Exports de sauvegarde
+exports/
+*.xlsx
+
+# Programme PocketBase (se télécharge, inutile de le publier)
+pocketbase.exe
+pocketbase_*.zip
+CHANGELOG.md
+LICENSE.md
+
+# Journaux et fichiers temporaires
+*.log
+logs/
+
+# Fichiers propres à Windows / aux éditeurs
+Thumbs.db
+desktop.ini
+.vscode/
+.claude/

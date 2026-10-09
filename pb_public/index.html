@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tableau de bord — Suivi Films &amp; Séries</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Tableau de bord</h1>
+
+    <div id="rappel-sauvegarde" class="bandeau" hidden>
+      <p id="texte-rappel"></p>
+      <button type="button" id="bouton-rappel" class="principal">Exporter maintenant</button>
+    </div>
+
+    <section class="tuiles" aria-label="Mini-statistiques">
+      <div class="tuile"><span class="tuile-valeur" id="stat-temps">…</span><span class="discret">temps total passé en visionnage</span></div>
+      <div class="tuile"><span class="tuile-valeur" id="stat-annee">…</span><span class="discret" id="stat-annee-libelle">titres vus cette année</span></div>
+      <a class="tuile tuile-lien" href="statistiques.html"><span class="tuile-valeur">→</span><span class="discret">toutes les statistiques</span></a>
+    </section>
+
+    <div class="deux-colonnes">
+      <section>
+        <h2>Dernier film vu</h2>
+        <div id="dernier-film"><p class="discret">Chargement…</p></div>
+      </section>
+      <section>
+        <h2>Dernière série vue</h2>
+        <div id="derniere-serie"><p class="discret">Chargement…</p></div>
+      </section>
+    </div>
+
+    <section>
+      <h2>Séries en cours</h2>
+      <div id="en-cours"><p class="discret">Chargement…</p></div>
+    </section>
+
+    <details class="etat-technique">
+      <summary class="discret">État du serveur</summary>
+      <p class="ligne-etat"><strong>Serveur :</strong> <span id="etat-serveur">vérification…</span></p>
+      <p class="ligne-etat"><strong>Jeton TMDB :</strong> <span id="etat-tmdb">vérification…</span></p>
+      <p class="discret">Interface d'administration : <a href="/_/">/_/</a></p>
+    </details>
+  </main>
+
+  <script src="js/commun.js"></script>
+  <script src="js/serie.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/accueil.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+Bibliothèques tierces copiées dans le projet (pas de chargement depuis Internet),
+pour que le site fonctionne hors ligne.
+
+- xlsx.full.min.js : SheetJS Community Edition 0.20.3
+  Source : https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js
+  Licence : Apache 2.0 (voir xlsx.LICENSE.txt)
+  Sert à créer (export) et lire (import) les fichiers Excel .xlsx.
