@@ -3,7 +3,8 @@
 // Routes que le navigateur utilise pour parler à la "source" (TMDB).
 // Le navigateur ne voit jamais le jeton : c'est le serveur qui appelle TMDB.
 //
-//   GET /api/source/rechercher?q=texte
+//   GET /api/source/rechercher?q=texte&page=1
+//   GET /api/source/decouvrir?categorie=tendances&page=1   (se balader dans le catalogue)
 //   GET /api/source/details/{format}/{id}      format = film | serie
 //   GET /api/source/saisons/{id}
 //   GET /api/source/episodes/{id}/{saison}
@@ -17,7 +18,15 @@
 routerAdd("GET", "/api/source/rechercher", (e) => {
   const texte = (e.request.url.query().get("q") || "").trim();
   if (!texte) return e.json(400, { message: "Paramètre q manquant" });
-  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.rechercher(texte));
+  const page = Math.max(1, Math.min(500, parseInt(e.request.url.query().get("page") || "1", 10) || 1));
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.rechercher(texte, page));
+});
+
+// Pour « se balader » : GET /api/source/decouvrir?categorie=tendances&page=2
+routerAdd("GET", "/api/source/decouvrir", (e) => {
+  const categorie = (e.request.url.query().get("categorie") || "tendances").trim();
+  const page = Math.max(1, Math.min(500, parseInt(e.request.url.query().get("page") || "1", 10) || 1));
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.decouvrir(categorie, page));
 });
 
 routerAdd("GET", "/api/source/details/{format}/{id}", (e) => {
