@@ -443,6 +443,10 @@ async function completerPays(resultats) {
 // ---------- Défilement infini ----------
 const parametres = new URLSearchParams(location.search);
 const texteRecherche = (parametres.get("q") || "").trim();
+// Recherche d'une personne depuis la barre du haut (?qp=nom&prole=acteur) : on affiche la liste des personnes
+const textePersonne = (parametres.get("qp") || "").trim();
+const ROLES_PERSONNE = { acteur: "Acteur", realisateur: "Réalisateur", producteur: "Producteur" };
+const rolePersonne = (valeur) => (ROLES_PERSONNE[valeur] ? valeur : "acteur");
 const categorieChoisie = CATEGORIES.some(([cle]) => cle === parametres.get("categorie")) ? parametres.get("categorie") : "tendances";
 
 // ---------- Filtres : inclure / exclure ----------
@@ -463,9 +467,9 @@ const filtres = {
   anneeMin: (parametres.get("amin") || "").replace(/\D/g, "").slice(0, 4),
   anneeMax: (parametres.get("amax") || "").replace(/\D/g, "").slice(0, 4),
   tri: ["mieux_notes", "recents"].includes(parametres.get("tri")) ? parametres.get("tri") : "populaires",
-  // Acteur ou réalisateur choisi : { id, nom, role: "acteur" | "realisateur" } (ou null)
+  // Acteur, réalisateur ou producteur choisi : { id, nom, role: "acteur" | "realisateur" | "producteur" } (ou null)
   personne: /^[0-9]+$/.test(parametres.get("pers") || "")
-    ? { id: parametres.get("pers"), nom: (parametres.get("pnom") || "").slice(0, 80), role: parametres.get("prole") === "realisateur" ? "realisateur" : "acteur" }
+    ? { id: parametres.get("pers"), nom: (parametres.get("pnom") || "").slice(0, 80), role: rolePersonne(parametres.get("prole")) }
     : null,
 };
 // Pendant une recherche par nom, les filtres servent à retirer ce qui n'intéresse pas (type, genres, pays, années)
@@ -508,7 +512,7 @@ function resumeFiltres(choix) {
   const liste = (a, b) => [a, b].join(",").split(",").filter((x) => x).map(nom);
   const parties = [];
   if (filtres.type !== "tous") parties.push(filtres.type === "film" ? "films" : "séries");
-  if (filtres.personne) parties.push(`${filtres.personne.role === "realisateur" ? "réalisés par" : "avec"} ${filtres.personne.nom}`);
+  if (filtres.personne) parties.push(`${{ realisateur: "réalisés par", producteur: "produits par", acteur: "avec" }[filtres.personne.role]} ${filtres.personne.nom}`);
   const inclus = liste(cleDe(filtres.genres, 1), cleDe(filtres.pays, 1));
   const exclus = liste(cleDe(filtres.genres, -1), cleDe(filtres.pays, -1));
   if (inclus.length) parties.push(`avec : ${inclus.join(", ")}`);
@@ -537,9 +541,18 @@ function creerPuce(libelle, etat, cle, apresChangement) {
   return puce;
 }
 
-// Champ « Acteur ou réalisateur » : on tape un nom, on choisit la bonne personne, puis son rôle
+// Une personne trouvée, sous forme de bouton (photo, nom, métier, titres connus)
+function boutonPersonne(p, role, auClic) {
+  const adresse = urlAffiche(p.photo, "w185");
+  return el("button", { type: "button", class: "personne-trouvee", onclick: auClic },
+    adresse ? el("img", { class: "personne-photo", src: adresse, alt: "", loading: "lazy" }) : el("span", { class: "personne-photo personne-initiales" }, initiales(p.nom)),
+    el("span", { class: "personne-trouvee-texte" }, el("strong", {}, p.nom),
+      el("span", { class: "discret" }, [ROLES_PERSONNE[p.metier] || "", ...p.connu_pour.slice(0, 2)].filter((x) => x).join(" · "))));
+}
+
+// Champ « Acteur, réalisateur ou producteur » : on tape un nom, on choisit la bonne personne, puis son rôle
 function creerChampPersonne(majCompteur) {
-  const saisie = el("input", { type: "search", placeholder: "Nom d'un acteur ou d'un réalisateur…", "aria-label": "Nom d'une personne" });
+  const saisie = el("input", { type: "search", placeholder: "Nom d'un acteur, réalisateur ou producteur…", "aria-label": "Nom d'une personne" });
   const boutonChercher = el("button", { type: "button" }, icone("search"), "Chercher");
   const trouvees = el("div", { class: "personnes-trouvees" });
   const choisie = el("div", { class: "personne-choisie" });
@@ -548,7 +561,7 @@ function creerChampPersonne(majCompteur) {
     choisie.replaceChildren();
     const p = filtres.personne;
     if (!p) return;
-    const roles = champsRadio("role_personne", [["acteur", "Acteur (rôles principaux)"], ["realisateur", "Réalisateur"]], p.role, "Rôle recherché");
+    const roles = champsRadio("role_personne", [["acteur", "Acteur (rôles principaux)"], ["realisateur", "Réalisateur"], ["producteur", "Producteur"]], p.role, "Rôle recherché");
     roles.addEventListener("change", (e) => { p.role = e.target.value; });
     choisie.append(
       el("p", { class: "personne-etiquette" }, icone("check"), el("strong", {}, p.nom),
@@ -562,22 +575,13 @@ function creerChampPersonne(majCompteur) {
     trouvees.replaceChildren(el("p", { class: "discret" }, "Recherche…"));
     try {
       const liste = await source(`personnes?q=${encodeURIComponent(texte)}`);
-      trouvees.replaceChildren(...(liste.length ? liste.map((p) => {
-        const adresse = urlAffiche(p.photo, "w185");
-        return el("button", {
-          type: "button", class: "personne-trouvee",
-          onclick: () => {
-            filtres.personne = { id: p.id, nom: p.nom, role: p.metier === "realisateur" ? "realisateur" : "acteur" };
-            trouvees.replaceChildren();
-            saisie.value = "";
-            dessinerChoix();
-            majCompteur();
-          },
-        },
-          adresse ? el("img", { class: "personne-photo", src: adresse, alt: "", loading: "lazy" }) : el("span", { class: "personne-photo personne-initiales" }, initiales(p.nom)),
-          el("span", { class: "personne-trouvee-texte" }, el("strong", {}, p.nom),
-            el("span", { class: "discret" }, [p.metier === "realisateur" ? "Réalisateur" : p.metier === "acteur" ? "Acteur" : "", ...p.connu_pour.slice(0, 2)].filter((x) => x).join(" · "))));
-      }) : [el("p", { class: "discret" }, "Personne introuvable. Vérifie l'orthographe.")]));
+      trouvees.replaceChildren(...(liste.length ? liste.map((p) => boutonPersonne(p, p.metier, () => {
+        filtres.personne = { id: p.id, nom: p.nom, role: rolePersonne(p.metier) };
+        trouvees.replaceChildren();
+        saisie.value = "";
+        dessinerChoix();
+        majCompteur();
+      })) : [el("p", { class: "discret" }, "Personne introuvable. Vérifie l'orthographe.")]));
     } catch (erreur) {
       trouvees.replaceChildren(el("p", { class: "ko" }, erreur.message));
     }
@@ -699,6 +703,29 @@ function afficherCategories() {
 }
 
 document.getElementById("bouton-manuel").addEventListener("click", ouvrirAjoutManuel);
+
+// Liste des personnes qui portent le nom tapé dans la barre du haut : un clic ouvre leurs titres
+async function afficherPersonnes() {
+  const role = rolePersonne(parametres.get("prole"));
+  document.getElementById("categories").replaceChildren(
+    el("span", { class: "discret" }, `${ROLES_PERSONNE[role]}s pour « ${textePersonne} » `),
+    el("a", { href: "catalogue.html" }, icone("arrow-left"), "Revenir à la découverte"));
+  const zone = el("div", { class: "personnes-trouvees personnes-resultats" });
+  grille.replaceWith(zone);
+  message.textContent = "Recherche…";
+  try {
+    const liste = await source(`personnes?q=${encodeURIComponent(textePersonne)}&metier=${role}`);
+    message.textContent = liste.length ? "Clique sur une personne pour voir ses titres." : `Aucun ${ROLES_PERSONNE[role].toLowerCase()} trouvé pour « ${textePersonne} ». Vérifie l'orthographe ou change le filtre de recherche.`;
+    zone.append(...liste.map((p) => boutonPersonne(p, role, () => { location.href = adressePersonne(p, role); })));
+  } catch (erreur) {
+    message.className = "ko";
+    message.textContent = erreur.message;
+  }
+}
+
+if (textePersonne) afficherPersonnes(); else demarrerCatalogue();
+
+function demarrerCatalogue() {
 afficherCategories();
 source("filtres").then((choix) => {
   construirePanneauFiltres(choix);
@@ -718,3 +745,4 @@ chargerPageSuivante().then(() => {
     ouvrirDetail(d, () => majPastille(d));
   }).catch(() => { /* titre introuvable : on laisse simplement les résultats */ });
 });
+}

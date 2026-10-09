@@ -132,8 +132,8 @@ function saga(idCollection) {
 }
 
 // Les personnes (acteurs, réalisateurs...) portant ce nom
-function personnes(texte) {
-  return fournisseur.personnes(texte);
+function personnes(texte, metier) {
+  return fournisseur.personnes(texte, metier);
 }
 
 // Les choix de filtres proposés par la page (genres, pays, régions)
