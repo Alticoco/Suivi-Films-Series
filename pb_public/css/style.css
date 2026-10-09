@@ -745,3 +745,20 @@ dialog.dialogue-detail { width: min(74rem, 96vw); padding-inline: var(--espace-8
 }
 .detail-infos .detail-actions { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .detail-infos .detail-actions form { width: 100%; text-align: left; }
+
+/* ---------- Statistiques : diagrammes circulaires ---------- */
+.graphiques { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: var(--espace-4); margin-bottom: var(--espace-8); }
+.carte-graphique { background: var(--couleur-carte); border: 1px solid var(--couleur-trait); border-radius: var(--rayon-grand); box-shadow: var(--ombre-carte); padding: var(--espace-5); min-width: 0; }
+.carte-graphique h3 { margin: 0; font-size: var(--taille-texte); }
+.carte-graphique > .discret { margin: 2px 0 var(--espace-3); }
+.graphique-corps { display: flex; align-items: center; gap: var(--espace-5); margin-top: var(--espace-3); }
+.anneau { width: 9.5rem; height: 9.5rem; flex-shrink: 0; }
+.anneau circle { transition: opacity var(--duree-rapide) var(--courbe); }
+.anneau:hover circle:not(:hover) { opacity: 0.45; }
+.anneau-total { fill: var(--couleur-texte); font-family: var(--police-mono); font-size: 6.5px; font-weight: 600; }
+.legende { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; font-size: var(--taille-ui); }
+.legende li { display: flex; align-items: center; gap: var(--espace-2); min-width: 0; }
+.pastille-couleur { width: 0.7rem; height: 0.7rem; border-radius: var(--rayon-petit); flex-shrink: 0; }
+.legende-nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.legende-valeur { font-family: var(--police-mono); color: var(--couleur-texte-discret); font-size: 0.72rem; white-space: nowrap; }
+@media (max-width: 520px) { .graphique-corps { flex-direction: column; align-items: stretch; } .anneau { align-self: center; } }

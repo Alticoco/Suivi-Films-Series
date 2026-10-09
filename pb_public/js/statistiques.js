@@ -85,6 +85,77 @@ function activerEquivalences() {
   });
 }
 
+// ---------- Diagrammes circulaires ----------
+// Pur SVG (aucune bibliothèque) : un anneau par répartition, avec une légende. Au-delà de 7 parts, le reste est regroupé en « Autres ».
+const COULEURS_GRAPHIQUE = ["var(--graphique-1)", "var(--graphique-2)", "var(--graphique-3)", "var(--graphique-4)", "var(--graphique-5)", "var(--graphique-6)", "var(--graphique-7)"];
+const NS_SVG = "http://www.w3.org/2000/svg";
+function noeudSvg(nom, attributs) {
+  const n = document.createElementNS(NS_SVG, nom);
+  Object.entries(attributs || {}).forEach(([cle, valeur]) => n.setAttribute(cle, valeur));
+  return n;
+}
+
+// donnees : [{ libelle, valeur }] déjà triées. Renvoie une carte (titre, anneau, légende) ou null s'il n'y a rien.
+function creerDiagramme(titre, sousTitre, donnees) {
+  const total = donnees.reduce((somme, d) => somme + d.valeur, 0);
+  if (!total) return null;
+  let parts = donnees.slice(0, 7);
+  const reste = donnees.slice(7).reduce((somme, d) => somme + d.valeur, 0);
+  if (reste) parts = parts.concat([{ libelle: "Autres", valeur: reste, autres: true }]);
+
+  const rayon = 15.9155; // circonférence = 100 : une part de x % se dessine avec un trait de x
+  const svg = noeudSvg("svg", { viewBox: "0 0 42 42", class: "anneau", role: "img", "aria-label": `${titre} : ${parts.map((p) => `${p.libelle} ${p.valeur}`).join(", ")}` });
+  svg.append(noeudSvg("circle", { cx: 21, cy: 21, r: rayon, fill: "none", stroke: "var(--couleur-panneau)", "stroke-width": 6 }));
+  let decalage = 25; // on démarre en haut (12 h)
+  parts.forEach((p, i) => {
+    const pourcent = (p.valeur / total) * 100;
+    const arc = noeudSvg("circle", {
+      cx: 21, cy: 21, r: rayon, fill: "none", "stroke-width": 6,
+      stroke: p.autres ? "var(--graphique-autres)" : COULEURS_GRAPHIQUE[i % COULEURS_GRAPHIQUE.length],
+      "stroke-dasharray": `${Math.max(0, pourcent - (parts.length > 1 ? 0.6 : 0))} ${100 - Math.max(0, pourcent - (parts.length > 1 ? 0.6 : 0))}`,
+      "stroke-dashoffset": decalage,
+    });
+    arc.append(noeudSvg("title", {}));
+    arc.firstChild.textContent = `${p.libelle} : ${p.valeur} (${Math.round(pourcent)} %)`;
+    svg.append(arc);
+    decalage -= pourcent;
+  });
+  const centre = noeudSvg("text", { x: 21, y: 22.2, "text-anchor": "middle", class: "anneau-total" });
+  centre.textContent = String(total);
+  svg.append(centre);
+
+  const legende = el("ul", { class: "legende" }, parts.map((p, i) => el("li", {},
+    el("span", { class: "pastille-couleur", style: `background: ${p.autres ? "var(--graphique-autres)" : COULEURS_GRAPHIQUE[i % COULEURS_GRAPHIQUE.length]}` }),
+    el("span", { class: "legende-nom" }, p.libelle),
+    el("span", { class: "legende-valeur" }, `${p.valeur} · ${Math.round((p.valeur / total) * 100)} %`))));
+  const carte = el("div", { class: "carte-graphique" }, el("h3", {}, titre), sousTitre ? el("p", { class: "discret" }, sousTitre) : null, el("div", { class: "graphique-corps" }, svg, legende));
+  return carte;
+}
+
+let nomsPays = null;
+try { nomsPays = new Intl.DisplayNames(["fr"], { type: "region" }); } catch (erreur) { /* on garde les codes */ }
+
+function afficherDiagrammes(bloc) {
+  const r = bloc.repartitions || {};
+  const liste = (categorie, transformer) => (r[categorie] || []).map((x) => ({ libelle: transformer ? transformer(x.cle) : x.cle, valeur: x.valeur }));
+  const types = [["film", "Films"], ["serie", "Séries"], ["anime", "Animés"]];
+  const parType = types.map(([cle, libelle]) => ({ libelle, valeur: ((r.types || []).find((x) => x.cle === cle) || {}).valeur || 0 })).filter((x) => x.valeur);
+  const decennie = (cle) => `Années ${cle}`;
+  const cartes = [
+    creerDiagramme("Films, séries, animés", "Proportion de titres vus", parType),
+    creerDiagramme("Genres de films", "Un film peut avoir plusieurs genres", liste("genres_films")),
+    creerDiagramme("Genres de séries", "Une série peut avoir plusieurs genres", liste("genres_series")),
+    creerDiagramme("Studios de films", "Les studios qui reviennent le plus", liste("studios_films")),
+    creerDiagramme("Réalisateurs", "Films seulement", liste("realisateurs_films")),
+    creerDiagramme("Créateurs de séries", "Les créateurs qui reviennent le plus", liste("createurs_series")),
+    creerDiagramme("Pays des films", "", liste("pays_films", (code) => (nomsPays ? nomsPays.of(code) || code : code))),
+    creerDiagramme("Pays des séries", "", liste("pays_series", (code) => (nomsPays ? nomsPays.of(code) || code : code))),
+    creerDiagramme("Époques des films", "Par décennie de sortie", liste("decennies_films", decennie).sort((a, b) => (a.libelle < b.libelle ? 1 : -1))),
+  ].filter((c) => c);
+  const zone = document.getElementById("graphiques");
+  zone.replaceChildren(...(cartes.length ? cartes : [el("p", { class: "discret" }, "Pas encore assez de titres vus pour dessiner des diagrammes.")]));
+}
+
 // Deux vues : l'année en cours, ou toute ma vie (toutes les années + ce que j'ai vu avant, sans date)
 let stats = null;
 let vue = new URLSearchParams(location.search).get("vue") === "total" ? "total" : "annee";
@@ -101,6 +172,7 @@ function afficherVue() {
   texte("vus-serie", bloc.titres_vus.serie);
   texte("vus-anime", bloc.titres_vus.anime);
   texte("titres-revus", bloc.revus);
+  afficherDiagrammes(bloc);
   texte("note-periode", vue === "total"
     ? "Total : toutes les années, plus ce que j'ai vu avant la création du site (sans date). Pour un titre « vu avant », la durée est estimée : un film compte une fois, une série compte tous ses épisodes diffusés (hors spéciaux) qui ne sont pas cochés un par un. Le temps d'un épisode est sa durée connue, sinon la durée habituelle d'un épisode de la série."
     : `Année ${stats.annee_en_cours} : seulement les visionnages datés de cette année. Ce qui a été vu avant la création du site n'y figure pas (voir « Total »).`);

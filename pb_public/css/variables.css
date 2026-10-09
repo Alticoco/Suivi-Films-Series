@@ -33,6 +33,16 @@
   --couleur-erreur: #f87171;        /* erreurs de saisie, actions destructrices, filtres exclus */
   --couleur-erreur-douce: rgba(248, 113, 113, 0.14);
 
+  /* Diagrammes circulaires (statistiques) : ordre des parts, le rouge fauteuil d'abord */
+  --graphique-1: #c8102e;
+  --graphique-2: #f08a4b;
+  --graphique-3: #f2c14e;
+  --graphique-4: #7fb685;
+  --graphique-5: #4fb0c6;
+  --graphique-6: #6c8ee0;
+  --graphique-7: #b07be0;
+  --graphique-autres: #6b5a5e;
+
   /* Polices */
   --police-texte: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
   --police-mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
