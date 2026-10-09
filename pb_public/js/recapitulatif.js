@@ -26,22 +26,27 @@ function initiales(nom) {
   return nom.split(/\s+/).filter((m) => m).slice(0, 2).map((m) => m[0].toUpperCase()).join("");
 }
 
-function creerPersonne(personne, role) {
+// "metier" : acteur | realisateur | producteur → le clic ouvre le catalogue avec tout ce qui est lié à cette personne
+function creerPersonne(personne, role, metier) {
   const adresse = urlAffiche(personne.photo, "w185");
   const visage = adresse
     ? el("img", { class: "personne-photo", src: adresse, alt: "", loading: "lazy" })
     : el("span", { class: "personne-photo personne-initiales" }, initiales(personne.nom));
-  return el("div", { class: "personne", title: role ? `${personne.nom} — ${role}` : personne.nom },
-    visage,
+  const contenu = [visage,
     el("span", { class: "personne-nom" }, personne.nom),
-    role ? el("span", { class: "personne-role" }, role) : null);
+    role ? el("span", { class: "personne-role" }, role) : null];
+  const titre = role ? `${personne.nom} — ${role}` : personne.nom;
+  // Fiche ancienne sans identifiant (rechargée au prochain affichage) : simple affichage, pas de lien
+  if (!personne.id) return el("div", { class: "personne", title: titre }, contenu);
+  return el("a", { class: "personne personne-lien", title: `${titre} : voir tous ses titres`,
+    href: `catalogue.html?pers=${personne.id}&pnom=${encodeURIComponent(personne.nom)}&prole=${metier}&cat=${metier}` }, contenu);
 }
 
-function creerGroupePersonnes(titre, personnes, avecRole) {
+function creerGroupePersonnes(titre, personnes, avecRole, metier) {
   if (!personnes.length) return null;
   return el("div", { class: "recap-groupe" },
     el("h4", {}, titre),
-    el("div", { class: "personnes" }, personnes.map((p) => creerPersonne(p, avecRole ? p.role : ""))));
+    el("div", { class: "personnes" }, personnes.map((p) => creerPersonne(p, avecRole ? p.role : "", metier))));
 }
 
 // Les classifications d'âge expliquées : [codes, nom, explication]
@@ -155,10 +160,10 @@ function creerRecapitulatif(d) {
   if (acteurs.length) dejaMontres.add(acteurs[0].nom);
   const distribution = sansDoublon(acteurs.slice(1));
   const equipe = [
-    creerGroupePersonnes(film ? "Réalisateur" : "Créé par", realisateurs, false),
-    creerGroupePersonnes(film ? "Producteur" : "Producteur exécutif", producteurs, false),
-    creerGroupePersonnes("Acteur principal", vedette, true),
-    creerGroupePersonnes("Distribution", distribution, true),
+    creerGroupePersonnes(film ? "Réalisateur" : "Créé par", realisateurs, false, "realisateur"),
+    creerGroupePersonnes(film ? "Producteur" : "Producteur exécutif", producteurs, false, "producteur"),
+    creerGroupePersonnes("Acteur principal", vedette, true, "acteur"),
+    creerGroupePersonnes("Distribution", distribution, true, "acteur"),
   ].filter((g) => g);
 
   return el("div", { class: "recap" },

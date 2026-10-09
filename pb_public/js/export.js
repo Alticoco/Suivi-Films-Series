@@ -7,7 +7,7 @@
 
 const FEUILLE_HISTORIQUE = "Historique";
 const FEUILLE_TITRES = "Mes titres";
-const ENTETES_HISTORIQUE = ["Titre", "Année", "Type", "Date", "Saison", "Épisode", "Note", "Commentaire", "Statut actuel", "Identifiant"];
+const ENTETES_HISTORIQUE = ["Titre", "Année", "Type", "Date", "Saison", "Épisode", "Note", "Commentaire", "Statut actuel", "Passage", "Identifiant"];
 const ENTETES_TITRES = ["Titre", "Année", "Type", "Statut", "Vu avant", "Coup de cœur", "Note série", "Notes", "Durée (min)", "Identifiant"];
 const TEXTE_VU_AVANT = "Vu avant";
 
@@ -46,11 +46,11 @@ function construireFeuilles(titres, visionnages) {
       const t = parId.get(v.titre);
       return [t.titre, vide(t.annee), LIBELLES_TYPE[t.type], v.avant ? TEXTE_VU_AVANT : formatDate(v.date),
         v.episode > 0 ? v.saison : "", v.episode > 0 ? v.episode : "",
-        vide(v.note), v.commentaire || "", LIBELLES_STATUT[t.statut], identifiantTitre(t)];
+        vide(v.note), v.commentaire || "", LIBELLES_STATUT[t.statut], v.passage > 1 ? v.passage : "", identifiantTitre(t)];
     });
   const lignesVuAvant = titres
     .filter((t) => t.vu_avant)
-    .map((t) => [t.titre, vide(t.annee), LIBELLES_TYPE[t.type], TEXTE_VU_AVANT, "", "", "", "", LIBELLES_STATUT[t.statut], identifiantTitre(t)]);
+    .map((t) => [t.titre, vide(t.annee), LIBELLES_TYPE[t.type], TEXTE_VU_AVANT, "", "", "", "", LIBELLES_STATUT[t.statut], "", identifiantTitre(t)]);
 
   const lignesTitres = [...titres]
     .sort((a, b) => a.titre.localeCompare(b.titre, "fr"))
