@@ -6,7 +6,7 @@
 ## 1. Le projet en deux phrases
 Site perso, un seul utilisateur, qui tourne **en local sur Windows** (PocketBase + HTML/CSS/JS simples, sans framework) pour suivre films, séries et animés. Les données de l'utilisateur restent chez lui (base `pb_data/`), exportables en Excel ; TMDB ne sert qu'à « habiller » les fiches (affiches, synopsis, distribution…).
 
-- Dépôt : https://github.com/Alticoco/Suivi-Films-Series (branche `main`, PR #1 à #11 fusionnés, puis une branche `recherche-personnes-rouge-fauteuil` (rouge des onglets + recherche de personnes)).
+- Dépôt : https://github.com/Alticoco/Suivi-Films-Series (branche `main`, PR #1 à #13 fusionnés, aucun ouvert).
 - Dossier : `E:\Projet IA\Suivi Films & Series`. Site : http://127.0.0.1:8090 — admin : http://127.0.0.1:8090/_/.
 - L'utilisateur est **débutant** : toujours expliquer simplement, **en français** (interface, commentaires du code, messages).
 
@@ -50,7 +50,7 @@ Collections : `titres` (dont `format_source`, `coup_de_coeur`, `vu_avant`), `vis
 ## 5. Ce qui a été fait (chronologie résumée)
 1. Étapes 1 à 10 du cahier des charges (installation, données/TMDB, catalogue, fiches film/série, bibliothèque, tableau de bord + stats, journal, sauvegarde, finitions).
 2. Évolutions demandées ensuite : catalogue « se balader » (défilement infini, catégories), fenêtre de détail, design **Token Mesh** (`DESIGN.md`) puis **fond noir pur**, notes en 10 étoiles (demi-étoiles), nav sur une ligne, épisodes cochables dès l'ajout d'une série, filtres inclure/exclure (genres, régions, pays, années, tri) y compris pendant une recherche par nom, carte récapitulative façon maquette, option « cocher aussi les épisodes précédents », coups de cœur, recherche acteur/réalisateur/producteur (champ des filtres et barre du haut : `?qp=nom&prole=…` liste les personnes, `?pers=id&prole=…` leur filmographie), menu « Filtrer » de la barre de recherche (choix gardé dans `localStorage`), onglets en rouge fauteuil de cinéma (`--couleur-onglet`), suggestions de recherche, info sur les classifications d'âge, bonus des séries, carrousels du tableau de bord (5 derniers films / séries), sagas (Avatar 1-2-3…), « vu avant » partiel, cache navigateur.
-3. Les PR #1 à #11 sont **fusionnés dans `main`** ; le PR « rouge des onglets + recherche de personnes » (route `personnes?q=&metier=`, rôle `producteur` dans `filmographie`) est en attente de fusion. Le suivi automatique des PR est activé (aucune CI n'est configurée sur le dépôt).
+3. Les PR #1 à #13 sont **fusionnés dans `main`** (#12 : onglets rouges + recherche de personnes, route `personnes?q=&metier=`, rôle `producteur` ; #13 : filtres de la bibliothèque + statistiques « Toute ma vie »). Le suivi automatique des PR est activé (aucune CI n'est configurée sur le dépôt).
 
 ## 6. Façon de travailler (préférences de l'utilisateur et leçons)
 - Un **PR par lot de modifications**, depuis une branche partant de `main` **à jour**, jamais empilés. Créer la branche *après* avoir fusionné ce dont elle dépend. Ne fusionner que quand l'utilisateur le demande (il le demande en général juste après).
