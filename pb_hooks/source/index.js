@@ -179,7 +179,8 @@ function resumes() {
   const fiches = $app.findRecordsByFilter("cache_source", "source = {:s} && type_donnee ~ 'details_'", "", 0, 0, { s: NOM_SOURCE });
   fiches.forEach((fiche) => {
     const donnees = JSON.parse(fiche.getString("donnees"));
-    resultat[`${donnees.format}:${donnees.id_source}`] = { affiche: donnees.affiche, note_source: donnees.note_source };
+    // genres / pays : servent aux filtres de la bibliothèque (pays absent = fiche ancienne, à recharger)
+    resultat[`${donnees.format}:${donnees.id_source}`] = { affiche: donnees.affiche, note_source: donnees.note_source, genres: donnees.genres, pays: donnees.pays };
   });
   return resultat;
 }

@@ -518,25 +518,6 @@ function resumeFiltres(choix) {
   return parties.join(" · ");
 }
 
-function creerPuce(libelle, etat, cle, apresChangement) {
-  const puce = el("button", { type: "button", class: "puce" });
-  const dessiner = () => {
-    const valeur = etat[cle] || 0;
-    puce.className = `puce${valeur === 1 ? " puce-incluse" : valeur === -1 ? " puce-exclue" : ""}`;
-    puce.setAttribute("aria-pressed", String(valeur !== 0));
-    puce.title = valeur === 0 ? "Clique pour inclure (vert)" : valeur === 1 ? "Inclus (vert) : clique pour exclure" : "Exclu (rouge) : clique pour retirer";
-    puce.replaceChildren(libelle);
-  };
-  puce.addEventListener("click", () => {
-    const suivante = { 0: 1, 1: -1, "-1": 0 }[etat[cle] || 0]; // neutre → inclus → exclu → neutre
-    if (suivante === 0) delete etat[cle]; else etat[cle] = suivante;
-    dessiner();
-    apresChangement();
-  });
-  dessiner();
-  return puce;
-}
-
 // Champ « Acteur ou réalisateur » : on tape un nom, on choisit la bonne personne, puis son rôle
 function creerChampPersonne(majCompteur) {
   const saisie = el("input", { type: "search", placeholder: "Nom d'un acteur ou d'un réalisateur…", "aria-label": "Nom d'une personne" });

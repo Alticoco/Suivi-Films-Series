@@ -10,13 +10,14 @@
 <body>
   <main>
     <h1>Statistiques</h1>
+    <nav id="vues" class="categories" aria-label="Période" hidden></nav>
     <p id="message" class="discret">Chargement…</p>
 
     <div id="contenu" hidden>
       <section class="tuiles" aria-label="Temps passé">
         <div class="tuile"><span class="tuile-valeur" id="temps-total"></span><span class="discret">temps total passé</span></div>
-        <div class="tuile"><span class="tuile-valeur" id="temps-films"></span><span class="discret">devant des films</span></div>
-        <div class="tuile"><span class="tuile-valeur" id="temps-episodes"></span><span class="discret">devant des épisodes</span></div>
+        <div class="tuile"><span class="tuile-valeur" id="temps-films"></span><span class="discret" id="etiquette-films">devant des films</span></div>
+        <div class="tuile"><span class="tuile-valeur" id="temps-episodes"></span><span class="discret" id="etiquette-episodes">devant des épisodes</span></div>
       </section>
 
       <h2>Titres vus</h2>
@@ -26,10 +27,12 @@
         <div class="tuile"><span class="tuile-valeur" id="vus-anime"></span><span class="discret">animés</span></div>
       </section>
 
-      <h2>Visionnages par année</h2>
-      <div id="annees" class="annees"></div>
+      <section id="bloc-annees">
+        <h2>Visionnages par année</h2>
+        <div id="annees" class="annees"></div>
+      </section>
 
-      <p class="discret">Les titres « vus avant » (sans date) comptent dans les titres vus, mais pas dans le temps passé ni dans les années. Le temps d'un épisode est sa durée connue, sinon la durée habituelle d'un épisode de la série.</p>
+      <p id="note-periode" class="discret"></p>
     </div>
   </main>
 
