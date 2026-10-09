@@ -122,7 +122,8 @@ async function chargerInfosSource() {
     if (d.genres.length) lignes.push(d.genres.join(", "));
     bloc.replaceChildren(
       el("p", { class: "discret" }, lignes.join(" · ")),
-      el("p", { class: "synopsis" }, d.synopsis || "Pas de synopsis disponible."));
+      el("p", { class: "synopsis" }, d.synopsis || "Pas de synopsis disponible."),
+      creerRecapitulatif(d)); // studio, box-office, pays, équipe, distribution...
     // Image TMDB (sauf si j'ai mis la mienne)
     if (!titre.image_perso && d.affiche) {
       const nouvelle = creerImage(urlAffiche(d.affiche, "w342"));

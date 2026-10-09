@@ -100,7 +100,17 @@ function creerFormulaireSerie(resultat, apres) {
       const cle = cleEpisode(saison.numero, episode.numero);
       const case_ = el("input", { type: "checkbox", checked: choisis.has(cle), disabled: !estDiffuse(episode) });
       case_.addEventListener("change", () => {
-        if (case_.checked) choisis.add(cle); else choisis.delete(cle);
+        if (case_.checked) {
+          choisis.add(cle);
+          // Option : cocher aussi tout ce qui précède (saisons d'avant et épisodes d'avant)
+          if (optionPrecedents) {
+            episodesAvant(saisons, saison.numero, episode.numero).forEach((x) => choisis.add(cleEpisode(x.saison, x.episode)));
+            dessinerListe();
+            return;
+          }
+        } else {
+          choisis.delete(cle);
+        }
         majBoutons();
       });
       const info = estDiffuse(episode)
@@ -190,6 +200,7 @@ function creerFormulaireSerie(resultat, apres) {
   zoneEpisodes.append(
     el("div", { class: "champ" }, el("label", {}, "Saison"), selectSaison),
     el("div", { class: "barre-boutons" }, boutonSaison, boutonJusqua),
+    creerOptionPrecedents(),
     liste,
     el("div", { class: "champ champ-date" }, el("label", {}, "Date du visionnage (pour les épisodes cochés)"), date),
     el("div", { class: "barre-enregistrer" }, compteur, boutonEnregistrer));
@@ -203,8 +214,7 @@ function ouvrirDetail(resultat, apresAjout) {
 
   // Infos déjà connues par la liste : on les affiche tout de suite, puis on complète
   const meta = el("p", { class: "discret" }, [LIBELLES_TYPE[estFilmTmdb ? "film" : "serie"], resultat.annee].filter(Boolean).join(" · "));
-  const note = el("p", { class: "note-tmdb" });
-  const genres = el("p", { class: "discret" });
+  const recapZone = el("div", { class: "recap-zone" }); // rempli quand les détails complets arrivent
   const synopsis = el("p", { class: "synopsis" }, resultat.synopsis || "Chargement du synopsis…");
   const afficheZone = el("div", { class: "detail-affiche" });
   const dessinerAffiche = (chemin) => {
@@ -214,11 +224,6 @@ function ouvrirDetail(resultat, apresAjout) {
       : el("div", { class: "affiche" }, "Pas d'affiche"));
   };
   dessinerAffiche(resultat.affiche);
-  const majNote = (valeur, votes) => {
-    if (!valeur) { note.replaceChildren("Pas encore de note TMDB"); return; }
-    note.replaceChildren(icone("star"), `${valeur.toFixed(1)} / 10 sur TMDB${votes ? ` (${votes} votes)` : ""}`);
-  };
-  majNote(resultat.note_source, 0);
 
   const actions = el("div", { class: "detail-actions" });
   const dessinerActions = () => {
@@ -274,7 +279,7 @@ function ouvrirDetail(resultat, apresAjout) {
   const fenetre = el("dialog", { class: "dialogue-detail" },
     fermer,
     el("div", { class: "detail" }, afficheZone,
-      el("div", { class: "detail-infos" }, el("h2", {}, resultat.titre), meta, note, genres, synopsis, actions)));
+      el("div", { class: "detail-infos" }, el("h2", {}, resultat.titre), meta, synopsis, recapZone, actions)));
   fermer.addEventListener("click", () => fenetre.close());
   fenetre.addEventListener("click", (evenement) => {
     // Un clic sur le fond sombre (en dehors du cadre) ferme la fenêtre. On vérifie que le clic vise
@@ -300,8 +305,7 @@ function ouvrirDetail(resultat, apresAjout) {
       if (d.statut_diffusion && STATUTS_DIFFUSION[d.statut_diffusion]) morceaux.push(STATUTS_DIFFUSION[d.statut_diffusion]);
     }
     meta.textContent = morceaux.filter(Boolean).join(" · ");
-    majNote(d.note_source, d.nb_votes);
-    genres.textContent = d.genres.join(", ");
+    recapZone.replaceChildren(creerRecapitulatif(d)); // studio, box-office, pays, équipe, distribution...
     synopsis.textContent = d.synopsis || "Pas de synopsis disponible.";
     if (d.affiche && d.affiche !== resultat.affiche) dessinerAffiche(d.affiche);
   }).catch(() => {
@@ -400,16 +404,154 @@ function creerCarte(resultat) {
   },
     el("span", { class: "carte-affiche-image" }, image),
     el("span", { class: "carte-affiche-titre" }, resultat.titre),
-    el("span", { class: "discret" }, sousTitre));
+    el("span", { class: "discret" }, sousTitre),
+    el("span", { class: "discret carte-pays" })); // le pays arrive juste après (voir completerPays)
   cartes.set(cleTitre(resultat.format, resultat.id_source), carte);
   majPastille(resultat);
   return carte;
+}
+
+// Affiche le pays de production sous chaque affiche. Les listes filtrées le connaissent déjà ;
+// pour les autres, on le demande au serveur par lots (il le garde ensuite en cache).
+function afficherPays(resultat, codes) {
+  const zone = cartes.get(cleTitre(resultat.format, resultat.id_source))?.querySelector(".carte-pays");
+  if (zone) zone.textContent = nomsDePays(codes).slice(0, 2).join(", ");
+}
+
+async function completerPays(resultats) {
+  const inconnus = [];
+  for (const resultat of resultats) {
+    if (resultat.pays) afficherPays(resultat, resultat.pays);
+    else inconnus.push(resultat);
+  }
+  for (let debut = 0; debut < inconnus.length; debut += 12) {
+    const lot = inconnus.slice(debut, debut + 12);
+    try {
+      const pays = await source(`pays?ids=${lot.map((r) => cleTitre(r.format, r.id_source)).join(",")}`);
+      lot.forEach((r) => { const codes = pays[cleTitre(r.format, r.id_source)]; if (codes) afficherPays(r, codes); });
+    } catch (erreur) { /* pas de pays affiché : sans gravité */ }
+  }
 }
 
 // ---------- Défilement infini ----------
 const parametres = new URLSearchParams(location.search);
 const texteRecherche = (parametres.get("q") || "").trim();
 const categorieChoisie = CATEGORIES.some(([cle]) => cle === parametres.get("categorie")) ? parametres.get("categorie") : "tendances";
+
+// ---------- Filtres : inclure / exclure ----------
+// Les choix se lisent dans l'adresse de la page (?type=film&gi=drame&ge=horreur&pe=asie…) :
+//   gi / ge = genres inclus / exclus · pi / pe = pays ou régions inclus / exclus
+// Chaque « puce » a 3 états : neutre → inclus (+) → exclu (−) → neutre.
+const lireListeUrl = (cle) => (parametres.get(cle) || "").split(",").filter((x) => x);
+const etatDepuisUrl = (inclus, exclus) => {
+  const etat = {};
+  lireListeUrl(inclus).forEach((cle) => { etat[cle] = 1; });
+  lireListeUrl(exclus).forEach((cle) => { etat[cle] = -1; });
+  return etat;
+};
+const filtres = {
+  type: ["film", "serie"].includes(parametres.get("type")) ? parametres.get("type") : "tous",
+  genres: etatDepuisUrl("gi", "ge"),
+  pays: etatDepuisUrl("pi", "pe"),
+  anneeMin: (parametres.get("amin") || "").replace(/\D/g, "").slice(0, 4),
+  anneeMax: (parametres.get("amax") || "").replace(/\D/g, "").slice(0, 4),
+  tri: ["mieux_notes", "recents"].includes(parametres.get("tri")) ? parametres.get("tri") : "populaires",
+};
+const filtresActifs = !texteRecherche && ["type", "gi", "ge", "pi", "pe", "amin", "amax", "tri"].some((cle) => parametres.has(cle));
+
+const TRIS = { populaires: "Les plus populaires", mieux_notes: "Les mieux notés", recents: "Les plus récents" };
+const cleDe = (etat, valeur) => Object.keys(etat).filter((cle) => etat[cle] === valeur).join(",");
+
+// Paramètres envoyés au serveur (route « explorer »)
+function parametresExplorer(page) {
+  const p = new URLSearchParams({ type: filtres.type, tri: filtres.tri, page });
+  [["genres_inclus", cleDe(filtres.genres, 1)], ["genres_exclus", cleDe(filtres.genres, -1)],
+    ["pays_inclus", cleDe(filtres.pays, 1)], ["pays_exclus", cleDe(filtres.pays, -1)],
+    ["annee_min", filtres.anneeMin], ["annee_max", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
+  return p.toString();
+}
+
+// Adresse de la page pour les filtres choisis (seulement ce qui diffère de la valeur par défaut)
+function adresseFiltres() {
+  const p = new URLSearchParams();
+  if (filtres.type !== "tous") p.set("type", filtres.type);
+  [["gi", cleDe(filtres.genres, 1)], ["ge", cleDe(filtres.genres, -1)], ["pi", cleDe(filtres.pays, 1)], ["pe", cleDe(filtres.pays, -1)],
+    ["amin", filtres.anneeMin], ["amax", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
+  if (filtres.tri !== "populaires") p.set("tri", filtres.tri);
+  return p.toString() ? `catalogue.html?${p}` : "catalogue.html";
+}
+
+const nombreFiltres = () => Object.keys(filtres.genres).length + Object.keys(filtres.pays).length
+  + (filtres.type !== "tous" ? 1 : 0) + (filtres.anneeMin || filtres.anneeMax ? 1 : 0) + (filtres.tri !== "populaires" ? 1 : 0);
+
+// Une phrase qui résume les filtres actifs (affichée au-dessus de la grille)
+function resumeFiltres(choix) {
+  const nom = (cle) => (choix.genres.concat(choix.pays, choix.regions).find((x) => x.cle === cle) || {}).libelle || cle;
+  const liste = (a, b) => [a, b].join(",").split(",").filter((x) => x).map(nom);
+  const parties = [];
+  if (filtres.type !== "tous") parties.push(filtres.type === "film" ? "films" : "séries");
+  const inclus = liste(cleDe(filtres.genres, 1), cleDe(filtres.pays, 1));
+  const exclus = liste(cleDe(filtres.genres, -1), cleDe(filtres.pays, -1));
+  if (inclus.length) parties.push(`avec : ${inclus.join(", ")}`);
+  if (exclus.length) parties.push(`sans : ${exclus.join(", ")}`);
+  if (filtres.anneeMin || filtres.anneeMax) parties.push(`${filtres.anneeMin || "…"} – ${filtres.anneeMax || "…"}`);
+  parties.push(TRIS[filtres.tri].toLowerCase());
+  return parties.join(" · ");
+}
+
+function creerPuce(libelle, etat, cle, apresChangement) {
+  const puce = el("button", { type: "button", class: "puce" });
+  const dessiner = () => {
+    const valeur = etat[cle] || 0;
+    puce.className = `puce${valeur === 1 ? " puce-incluse" : valeur === -1 ? " puce-exclue" : ""}`;
+    puce.setAttribute("aria-pressed", String(valeur !== 0));
+    puce.title = valeur === 0 ? "Clique pour inclure" : valeur === 1 ? "Inclus : clique pour exclure" : "Exclu : clique pour retirer";
+    puce.replaceChildren(...(valeur === 1 ? [icone("plus")] : valeur === -1 ? [icone("minus")] : []), libelle);
+  };
+  puce.addEventListener("click", () => {
+    const suivante = { 0: 1, 1: -1, "-1": 0 }[etat[cle] || 0]; // neutre → inclus → exclu → neutre
+    if (suivante === 0) delete etat[cle]; else etat[cle] = suivante;
+    dessiner();
+    apresChangement();
+  });
+  dessiner();
+  return puce;
+}
+
+function construirePanneauFiltres(choix) {
+  const compteur = el("span", { class: "compteur-filtres" });
+  const majCompteur = () => { const n = nombreFiltres(); compteur.textContent = n ? String(n) : ""; compteur.hidden = !n; };
+  const groupePuces = (liste, etat) => el("div", { class: "puces" }, liste.map((x) => creerPuce(x.libelle, etat, x.cle, majCompteur)));
+
+  const radiosType = champsRadio("type_filtre", [["tous", "Films et séries"], ["film", "Films"], ["serie", "Séries"]], filtres.type, "Type");
+  radiosType.addEventListener("change", (e) => { filtres.type = e.target.value; majCompteur(); });
+  const champAnnee = (nom, cleFiltre, repere) => {
+    const champ = el("input", { type: "number", inputmode: "numeric", min: "1900", max: "2100", placeholder: repere, value: filtres[cleFiltre] || null, "aria-label": nom });
+    champ.addEventListener("input", () => { filtres[cleFiltre] = champ.value.slice(0, 4); majCompteur(); });
+    return champ;
+  };
+  const choixTri = el("select", { "aria-label": "Trier par" }, Object.entries(TRIS).map(([cle, libelle]) => el("option", { value: cle, selected: cle === filtres.tri }, libelle)));
+  choixTri.addEventListener("change", () => { filtres.tri = choixTri.value; majCompteur(); });
+
+  const corps = el("div", { class: "filtres-corps" },
+    el("p", { class: "discret" }, "Clique une fois sur une puce pour l'inclure (+), deux fois pour l'exclure (−), trois fois pour la retirer."),
+    radiosType,
+    el("div", { class: "champ" }, el("label", {}, "Genres (le titre doit avoir tous les genres inclus)"), groupePuces(choix.genres, filtres.genres),
+      el("p", { class: "discret" }, "Horreur, Thriller, Romance, Histoire et Musique n'existent que pour les films : les inclure masque les séries.")),
+    el("div", { class: "champ" }, el("label", {}, "Régions (au moins une des régions incluses)"), groupePuces(choix.regions, filtres.pays)),
+    el("div", { class: "champ" }, el("label", {}, "Pays de production"), groupePuces(choix.pays, filtres.pays)),
+    el("div", { class: "ligne-filtres" },
+      el("div", { class: "champ" }, el("label", {}, "Années de sortie"),
+        el("div", { class: "champ-annees" }, champAnnee("Année minimum", "anneeMin", "de"), el("span", { class: "discret" }, "à"), champAnnee("Année maximum", "anneeMax", "à"))),
+      el("div", { class: "champ" }, el("label", {}, "Trier par"), choixTri)),
+    el("div", { class: "boutons-filtres" },
+      el("button", { type: "button", class: "principal", onclick: () => { location.href = adresseFiltres(); } }, "Appliquer les filtres"),
+      el("button", { type: "button", onclick: () => { location.href = "catalogue.html"; } }, "Réinitialiser")));
+
+  const panneau = el("details", { class: "panneau-filtres" }, el("summary", {}, "Filtres", compteur), corps);
+  majCompteur();
+  document.getElementById("categories").after(panneau);
+}
 
 const etat = { page: 0, totalPages: 1, enCours: false, dejaVus: new Set(), erreur: false };
 const sentinelle = document.getElementById("sentinelle");
@@ -422,7 +564,9 @@ async function chargerPageSuivante() {
   try {
     const url = texteRecherche
       ? `rechercher?q=${encodeURIComponent(texteRecherche)}&page=${page}`
-      : `decouvrir?categorie=${categorieChoisie}&page=${page}`;
+      : filtresActifs
+        ? `explorer?${parametresExplorer(page)}`
+        : `decouvrir?categorie=${categorieChoisie}&page=${page}`;
     const [liste] = await Promise.all([source(url), page === 1 ? chargerBibliotheque() : null]);
     etat.page = liste.page;
     etat.totalPages = liste.total_pages;
@@ -433,13 +577,16 @@ async function chargerPageSuivante() {
       return true;
     });
     grille.append(...nouveaux.map(creerCarte));
+    completerPays(nouveaux);
 
     if (texteRecherche && !etat.dejaVus.size) {
       message.textContent = `Aucun résultat pour « ${texteRecherche} ». Tu peux l'ajouter manuellement.`;
+    } else if (filtresActifs && !etat.dejaVus.size && etat.page >= etat.totalPages) {
+      message.textContent = "Aucun titre ne correspond à ces filtres. Essaie d'en retirer un.";
     } else if (etat.page >= etat.totalPages) {
       message.textContent = "Tu as tout vu : fin de la liste.";
     } else {
-      message.textContent = "";
+      message.textContent = filtresActifs && !etat.dejaVus.size ? "Recherche des titres correspondants…" : "";
     }
   } catch (erreur) {
     etat.erreur = true;
@@ -466,11 +613,24 @@ function afficherCategories() {
       el("a", { href: "catalogue.html" }, icone("arrow-left"), "Revenir à la découverte"));
     return;
   }
+  if (filtresActifs) {
+    // Le résumé des filtres est complété quand les choix de filtres sont chargés (voir plus bas)
+    zone.replaceChildren(el("span", { class: "discret", id: "resume-filtres" }, "Résultats filtrés "),
+      el("a", { href: "catalogue.html" }, icone("arrow-left"), "Revenir à la découverte"));
+    return;
+  }
   zone.replaceChildren(...CATEGORIES.map(([cle, libelle]) =>
     el("a", { href: `catalogue.html?categorie=${cle}`, class: `pastille-categorie${cle === categorieChoisie ? " active" : ""}`, "aria-current": cle === categorieChoisie ? "true" : null }, libelle)));
 }
 
 document.getElementById("bouton-manuel").addEventListener("click", ouvrirAjoutManuel);
 afficherCategories();
+if (!texteRecherche) {
+  source("filtres").then((choix) => {
+    construirePanneauFiltres(choix);
+    const resume = document.getElementById("resume-filtres");
+    if (resume) resume.textContent = `Résultats filtrés : ${resumeFiltres(choix)} `;
+  }).catch(() => { /* sans les choix de filtres, le catalogue marche quand même */ });
+}
 message.textContent = "Chargement…";
 chargerPageSuivante();

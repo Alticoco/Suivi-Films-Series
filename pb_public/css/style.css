@@ -247,7 +247,7 @@ button.carte-affiche:hover, button.carte-affiche:active { filter: none; }
 .pastille .icone { width: 0.9rem; height: 0.9rem; }
 #sentinelle { height: 1px; }
 
-dialog.dialogue-detail { width: min(52rem, 96vw); max-height: 92vh; overflow-y: auto; position: relative; }
+dialog.dialogue-detail { width: min(60rem, 96vw); max-height: 92vh; overflow-y: auto; position: relative; }
 .dialogue-detail .fermer {
   position: absolute; top: var(--espace-3); right: var(--espace-3); width: 2.2rem; height: 2.2rem; padding: 0; z-index: 1;
   background: transparent; border: none; color: var(--couleur-texte-discret);
@@ -437,3 +437,57 @@ input[type="file"]::file-selector-button {
 .champ-date .champ-date-input, .champ-date input { width: 100%; }
 .note-infos { display: inline-flex; align-items: center; gap: var(--espace-3); }
 .note-valeur { min-width: 0 !important; }
+
+/* ---------- Catalogue : filtres (inclure / exclure) ---------- */
+.panneau-filtres {
+  background: var(--couleur-carte); border: 1px solid var(--couleur-trait); border-radius: var(--rayon-grand);
+  box-shadow: var(--ombre-carte); margin-bottom: var(--espace-4);
+}
+.panneau-filtres > summary { cursor: pointer; padding: var(--espace-3) var(--espace-4); font-weight: 600; display: flex; align-items: center; gap: var(--espace-2); list-style-position: inside; }
+.compteur-filtres {
+  min-width: 1.4rem; height: 1.4rem; padding: 0 6px; border-radius: var(--rayon-pilule); background: var(--couleur-texte); color: var(--couleur-sur-primaire);
+  font-family: var(--police-mono); font-size: var(--taille-etiquette); font-weight: 600; display: inline-flex; align-items: center; justify-content: center;
+}
+.filtres-corps { padding: 0 var(--espace-4) var(--espace-4); }
+.puces { display: flex; flex-wrap: wrap; gap: var(--espace-2); }
+.puce {
+  display: inline-flex; align-items: center; gap: 0.3em; padding: 5px 12px; border-radius: var(--rayon-pilule);
+  background: transparent; border: 1px solid var(--couleur-contour); color: var(--couleur-texte-discret); font-size: var(--taille-ui); font-weight: 500;
+}
+.puce:hover { color: var(--couleur-texte); border-color: var(--couleur-texte-discret); filter: none; }
+.puce .icone { width: 0.9em; height: 0.9em; }
+/* Inclus : menthe (état positif) · Exclu : barré, sans couleur d'alerte */
+.puce-incluse { color: var(--couleur-menthe); border-color: var(--couleur-menthe); background: var(--couleur-menthe-douce); }
+.puce-exclue { color: var(--couleur-texte-discret); border-style: dashed; text-decoration: line-through; }
+.ligne-filtres { display: flex; flex-wrap: wrap; gap: var(--espace-6); }
+.champ-annees { display: flex; align-items: center; gap: var(--espace-2); }
+.champ-annees input { width: 6rem; }
+.boutons-filtres { display: flex; flex-wrap: wrap; gap: var(--espace-2); }
+.carte-pays { min-height: 1.1em; font-family: var(--police-mono); }
+
+/* ---------- Option « cocher aussi les épisodes précédents » ---------- */
+.option-precedents { display: inline-flex; align-items: center; gap: var(--espace-2); font-size: var(--taille-ui); color: var(--couleur-texte-discret); cursor: pointer; margin-bottom: var(--espace-3); }
+.barre-serie .option-precedents { margin-bottom: 0; }
+
+/* ---------- Carte récapitulative : genres, tuiles, équipe et distribution ---------- */
+.recap { margin: var(--espace-4) 0; }
+.recap-genres { display: flex; flex-wrap: wrap; gap: var(--espace-2); margin-bottom: var(--espace-3); }
+.recap-genre { padding: 3px 12px; border-radius: var(--rayon-pilule); background: var(--couleur-panneau); border: 1px solid var(--couleur-separateur); font-size: var(--taille-ui); font-weight: 500; }
+.recap-tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: var(--espace-2); }
+.recap-tuile {
+  background: var(--couleur-fond); border: 1px solid var(--couleur-trait); border-radius: var(--rayon-moyen);
+  padding: var(--espace-3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; min-height: 4.5rem;
+}
+.recap-tuile-libelle { font-family: var(--police-mono); font-size: var(--taille-etiquette); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--couleur-texte-discret); }
+.recap-tuile-valeur { font-family: var(--police-mono); font-variant-numeric: tabular-nums; font-size: 1.15rem; font-weight: 600; line-height: 1.2; }
+.recap-tuile-texte .recap-tuile-valeur { font-family: var(--police-texte); font-size: var(--taille-ui); font-weight: 600; }
+.recap-tuile-details { font-size: 0.7rem; color: var(--couleur-texte-discret); font-family: var(--police-mono); }
+.recap-equipe { display: flex; flex-wrap: wrap; gap: var(--espace-4) var(--espace-6); margin-top: var(--espace-4); padding-top: var(--espace-4); border-top: 1px solid var(--couleur-separateur); }
+.recap-groupe h4 { margin: 0 0 var(--espace-2); font-family: var(--police-mono); font-size: var(--taille-etiquette); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--couleur-texte-discret); text-align: center; }
+.personnes { display: flex; gap: var(--espace-3); }
+.personne { width: 5rem; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.personne-photo { width: 3.5rem; height: 3.5rem; border-radius: var(--rayon-pilule); object-fit: cover; background: var(--couleur-panneau); border: 1px solid var(--couleur-trait); }
+.personne-initiales { display: flex; align-items: center; justify-content: center; font-family: var(--police-mono); color: var(--couleur-texte-discret); }
+.personne-nom { font-size: 0.75rem; font-weight: 500; line-height: 1.25; overflow-wrap: anywhere; }
+.personne-role { font-size: 0.68rem; color: var(--couleur-texte-discret); line-height: 1.2; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .recap-equipe { justify-content: center; } .personnes { flex-wrap: wrap; justify-content: center; } }
