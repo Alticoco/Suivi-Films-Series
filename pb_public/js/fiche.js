@@ -80,7 +80,7 @@ function afficher() {
     el("p", { class: "discret" }, sousTitre),
     infosSource,
     el("div", { class: "champ fiche-statut" }, el("label", { for: "statut" }, "Statut"), selectStatut),
-    film ? el("button", { type: "button", class: "principal", onclick: ouvrirVu }, "✓ Vu") : null,
+    film ? el("button", { type: "button", class: "principal", onclick: ouvrirVu }, icone("check"), "Vu") : null,
     el("div", { class: "champ" }, el("label", { for: "notes" }, "Mes notes"), champNotes, boutonNotes));
 
   const bas = [];
@@ -89,7 +89,7 @@ function afficher() {
   bas.push(zoneDanger());
 
   zone.replaceChildren(
-    el("p", {}, el("a", { href: "bibliotheque.html", onclick: retourBibliotheque }, "← Ma bibliothèque")),
+    el("p", {}, el("a", { href: "bibliotheque.html", onclick: retourBibliotheque }, icone("arrow-left"), "Ma bibliothèque")),
     el("div", { class: "fiche" }, colonneImage, colonneInfos),
     ...bas);
 
@@ -176,7 +176,7 @@ function sectionVisionnages() {
     section.append(el("p", { class: "discret" }, "Aucun visionnage pour l'instant. Clique sur « Vu » quand tu l'as regardé."));
   }
   if (titre.vu_avant) {
-    section.append(el("p", {}, "🕘 Vu avant la création du site (date inconnue)"));
+    section.append(el("p", { class: "icone-texte" }, icone("clock"), "Vu avant la création du site (date inconnue)"));
   }
 
   const liste = el("ul", { class: "liste-visionnages" });
@@ -185,7 +185,7 @@ function sectionVisionnages() {
     const position = datesAnciennes.indexOf(date);
     const precedente = position > 0 ? datesAnciennes[position - 1] : null;
     const details = [];
-    if (v.note) details.push(`★ ${v.note}/10`);
+    if (v.note) details.push(`note ${v.note}/10`);
     if (precedente) details.push(`revu ${dureeEntre(precedente, date) === "le même jour" ? "le même jour" : "après " + dureeEntre(precedente, date)}`);
     liste.append(el("li", {},
       el("div", {},

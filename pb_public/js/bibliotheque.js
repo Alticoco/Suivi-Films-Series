@@ -134,7 +134,7 @@ function creerCarte(ligne) {
       el("p", { class: "discret" }, infos),
       el("p", { class: "carte-pied" },
         el("span", { class: `statut statut-${t.statut}` }, LIBELLES_STATUT[t.statut]),
-        ligne.maNote ? el("span", { class: "ma-note" }, `★ ${ligne.maNote}`) : null)));
+        ligne.maNote ? el("span", { class: "ma-note" }, icone("star"), String(ligne.maNote)) : null)));
 }
 
 function afficher() {

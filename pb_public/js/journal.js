@@ -71,7 +71,7 @@ function creerLigne(entree, resumes) {
     vignette,
     el("div", { class: "journal-contenu" },
       el("a", { href: `fiche.html?id=${t.id}` }, el("strong", {}, t.titre)),
-      el("p", { class: "discret" }, detail, entree.note ? el("span", { class: "ma-note" }, ` · ★ ${entree.note}/10`) : null),
+      el("p", { class: "discret" }, detail, entree.note ? el("span", { class: "ma-note" }, icone("star"), `${entree.note}/10`) : null),
       entree.commentaire ? el("p", { class: "commentaire" }, entree.commentaire) : null));
 }
 

@@ -1,0 +1,9 @@
+Polices et icônes copiées dans le projet (aucun chargement depuis Internet : le site marche hors ligne).
+
+Polices — Geist et Geist Mono (par Vercel / Basement Studio)
+  Source : Google Fonts (https://fonts.google.com/specimen/Geist), polices variables, sous-ensembles latin et latin étendu.
+  Licence : SIL Open Font License 1.1 (https://openfontlicense.org)
+
+Icônes — Lucide (js/icones.js)
+  Source : https://lucide.dev (paquet lucide-static 0.468.0)
+  Licence : ISC. Copyright (c) Lucide Contributors 2022 ; portions Cole Bemis 2013-2022 (Feather, MIT).

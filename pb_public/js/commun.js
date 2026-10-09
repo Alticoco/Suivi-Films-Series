@@ -190,10 +190,10 @@ function construireEntete() {
   const q = new URLSearchParams(location.search).get("q") || "";
   const recherche = el("form", { class: "recherche", action: "catalogue.html", method: "get" },
     el("input", { type: "search", name: "q", value: q, placeholder: "Rechercher un film ou une série…", "aria-label": "Rechercher" }),
-    el("button", { type: "submit" }, "Rechercher"));
+    el("button", { type: "submit" }, icone("search"), "Rechercher"));
   return el("header", { class: "entete" },
     el("div", { class: "entete-contenu" },
-      el("a", { href: "index.html", class: "logo" }, "🎬 Suivi Films & Séries"),
+      el("a", { href: "index.html", class: "logo" }, icone("film"), "Suivi Films & Séries"),
       el("nav", {}, liens),
       recherche));
 }

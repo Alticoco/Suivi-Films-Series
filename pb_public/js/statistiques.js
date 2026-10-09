@@ -14,14 +14,14 @@ function afficherAnnees(annees) {
   }
   const maximum = Math.max(...annees.map((a) => a.films + a.episodes));
   // Années les plus récentes en haut
-  zone.replaceChildren(...[...annees].reverse().map((a) => {
+  zone.replaceChildren(...[...annees].reverse().map((a, rang) => {
     const total = a.films + a.episodes;
     const details = [];
     if (a.films) details.push(`${a.films} film${a.films > 1 ? "s" : ""}`);
     if (a.episodes) details.push(`${a.episodes} épisode${a.episodes > 1 ? "s" : ""}`);
     return el("div", { class: "ligne-annee" },
       el("strong", {}, String(a.annee)),
-      el("div", { class: "barre", role: "img", "aria-label": `${total} visionnages en ${a.annee}` },
+      el("div", { class: rang === 0 ? "barre barre-recente" : "barre", role: "img", "aria-label": `${total} visionnages en ${a.annee}` },
         el("div", { class: "barre-remplie", style: `width: ${Math.max(2, Math.round((total / maximum) * 100))}%` })),
       el("span", { class: "discret" }, `${details.join(" + ")} · ${texteDuree(a.minutes)}`));
   }));
