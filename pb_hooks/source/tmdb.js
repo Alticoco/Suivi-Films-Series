@@ -315,6 +315,16 @@ const TOUS_LES_PAYS = decouper(
   "SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ " +
   "UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS XK YE YT ZA ZM ZW SU YU CS DD");
 
+// Thèmes (mots-clés TMDB) : [clé, libellé, identifiant du mot-clé]. Valables pour les films et les séries.
+const THEMES = [
+  ["super_heros", "Super-héros", 9715], ["bande_dessinee", "Adapté d'une BD / comics", 9717], ["zombies", "Zombies", 12377],
+  ["voyage_temps", "Voyage dans le temps", 4379], ["braquage", "Braquage", 10051], ["tueur_en_serie", "Tueur en série", 10714],
+  ["vampires", "Vampires", 3133], ["post_apocalyptique", "Post-apocalyptique", 4458], ["dystopie", "Dystopie", 4565],
+  ["espace", "Espace", 9882], ["histoire_vraie", "Histoire vraie", 9672], ["arts_martiaux", "Arts martiaux", 779],
+  ["extraterrestres", "Extraterrestres", 9951], ["robots", "Robots", 14544], ["magie", "Magie", 2343],
+  ["espionnage", "Espionnage", 470], ["vengeance", "Vengeance", 9748], ["lycee", "Lycée", 6270],
+];
+
 // Pays proposés dans les filtres : [clé, libellé, codes]
 const PAYS = [
   ["etats_unis", "États-Unis", ["US"]], ["france", "France", ["FR"]], ["royaume_uni", "Royaume-Uni", ["GB"]],
@@ -340,6 +350,7 @@ function filtresDisponibles() {
     genres: GENRES.map((g) => ({ cle: g[0], libelle: g[1] })),
     regions: REGIONS.map((r) => ({ cle: r[0], libelle: r[1], codes: r[2] })),
     pays: PAYS.map((p) => ({ cle: p[0], libelle: p[1], codes: p[2] })),
+    themes: THEMES.map((t) => ({ cle: t[0], libelle: t[1] })),
   };
 }
 
@@ -387,6 +398,13 @@ function pageExplorer(format, p) {
     without_genres: uniques(exclus).join("|"),       // barre = « n'importe lequel de ces genres »
     with_origin_country: pays ? pays.join("|") : "", // barre = « n'importe lequel de ces pays »
   };
+  // Thèmes : au moins un des thèmes inclus (barre = « ou »), aucun des thèmes exclus
+  const idsThemes = (cles) => cles.map((cle) => (THEMES.find((t) => t[0] === cle) || [])[2]).filter((id) => id);
+  const themesInclus = idsThemes(liste(p.themes_inclus));
+  const themesExclus = idsThemes(liste(p.themes_exclus));
+  if (liste(p.themes_inclus).length && !themesInclus.length) return null; // thème inconnu
+  if (themesInclus.length) parametres.with_keywords = themesInclus.join("|");
+  if (themesExclus.length) parametres.without_keywords = themesExclus.join("|");
   // Un studio (with_companies) ou une chaîne de télévision (with_networks, séries seulement)
   if (/^[0-9]+$/.test(p.societe_id || "")) {
     if (p.societe_type === "chaine") {
@@ -507,8 +525,17 @@ function saga(idCollection) {
   const d = appeler(`/collection/${idCollection}`, { language: "fr-FR" });
   if (!d) return null;
   const films = (d.parts || []).slice().sort((a, b) => ((a.release_date || "9999") < (b.release_date || "9999") ? -1 : 1));
-  return { id: String(d.id), nom: d.name || "", films: films.map((f) => resultatNeutre(f, "film")) };
+  return { id: String(d.id), nom: d.name || "", affiche: d.poster_path || null, films: films.map((f) => resultatNeutre(f, "film")) };
 }
+
+// sagas(texte) → les sagas (collections de films) dont le nom ressemble au texte (ex. « star wars », « bond »)
+function sagas(texte) {
+  const d = appeler("/search/collection", { query: texte, language: "fr-FR", page: 1 });
+  return ((d && d.results) || []).slice(0, 12).map((s) => ({ id: String(s.id), nom: s.name || "", affiche: s.poster_path || null }));
+}
+
+// Sagas connues, proposées dans l'onglet « Sagas » (identifiants de collections TMDB)
+const SAGAS_CONNUES = [119, 10, 645, 1241, 121938, 2344, 84, 328, 9485, 87359, 263, 8091, 295, 10194, 528, 8945, 404609, 87096, 86311, 556, 748, 264, 1575, 531241, 115570, 2150, 8650, 33514, 9735, 1709];
 
 // saisons(idSource) → structure d'une série (liste des saisons)
 function saisons(idSource) {
@@ -546,4 +573,4 @@ function episodes(idSource, saison) {
   }));
 }
 
-module.exports = { rechercher, decouvrir, explorer, filtresDisponibles, codesDe, personnes, filmographie, saga, details, saisons, episodes };
+module.exports = { rechercher, decouvrir, explorer, filtresDisponibles, codesDe, personnes, filmographie, saga, sagas, SAGAS_CONNUES, details, saisons, episodes };

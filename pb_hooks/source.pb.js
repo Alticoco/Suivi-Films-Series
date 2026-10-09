@@ -56,6 +56,7 @@ routerAdd("GET", "/api/source/explorer", (e) => {
     annee_min: q.get("annee_min") || "", annee_max: q.get("annee_max") || "",
     tri: q.get("tri") || "populaires",
     personne_id: q.get("personne_id") || "", personne_role: q.get("personne_role") || "acteur",
+    themes_inclus: q.get("themes_inclus") || "", themes_exclus: q.get("themes_exclus") || "",
     societe_id: q.get("societe_id") || "", societe_type: q.get("societe_type") === "chaine" ? "chaine" : "studio",
     page: Math.max(1, Math.min(500, parseInt(q.get("page") || "1", 10) || 1)),
   };
@@ -68,6 +69,12 @@ routerAdd("GET", "/api/source/personnes", (e) => {
   const metier = e.request.url.query().get("metier") || ""; // facultatif : acteur, realisateur ou producteur
   if (!texte) return e.json(400, { message: "Paramètre q manquant" });
   return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.personnes(texte, metier));
+});
+
+// Les sagas : GET /api/source/sagas (les sagas connues) ou GET /api/source/sagas?q=star+wars (recherche)
+routerAdd("GET", "/api/source/sagas", (e) => {
+  const texte = (e.request.url.query().get("q") || "").trim();
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.sagas(texte));
 });
 
 // Les films d'une saga : GET /api/source/saga/{idCollection}

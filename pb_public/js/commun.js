@@ -272,6 +272,7 @@ const CATEGORIES_RECHERCHE = [
   ["acteur", "Acteurs", "Un acteur et ses rôles principaux"],
   ["realisateur", "Réalisateurs", "Un réalisateur et ses films"],
   ["producteur", "Producteurs", "Un producteur et ses productions"],
+  ["saga", "Sagas", "Star Wars, James Bond, Le Seigneur des anneaux…"],
 ];
 const METIERS_PERSONNE = { acteur: "Acteur", realisateur: "Réalisateur", producteur: "Producteur" };
 const estPersonne = (categorie) => !!METIERS_PERSONNE[categorie];
@@ -324,8 +325,16 @@ function activerSuggestions(formulaire, categorie) {
     li.addEventListener("mousedown", (e) => { e.preventDefault(); location.href = adressePersonne(p, role); });
     return li;
   };
-  const dessiner = (texte, categorieChoisie, titres, personnes) => {
-    const lignes = [...titres.map(ligneTitre), ...personnes.map((p) => lignePersonne(p, categorieChoisie))];
+  const ligneSaga = (s) => {
+    const adresse = urlAffiche(s.affiche, "w92");
+    const li = el("li", { role: "option", class: "suggestion", "aria-selected": "false" },
+      adresse ? el("img", { class: "suggestion-affiche", src: adresse, alt: "" }) : el("span", { class: "suggestion-affiche suggestion-vide" }),
+      el("span", { class: "suggestion-texte" }, el("strong", {}, s.nom.replace(/ - Saga$/i, "")), el("span", { class: "discret" }, "Saga · tous les films")));
+    li.addEventListener("mousedown", (e) => { e.preventDefault(); location.href = `catalogue.html?saga=${s.id}&cat=saga`; });
+    return li;
+  };
+  const dessiner = (texte, categorieChoisie, titres, personnes, sagas) => {
+    const lignes = [...titres.map(ligneTitre), ...(sagas || []).map(ligneSaga), ...personnes.map((p) => lignePersonne(p, categorieChoisie))];
     const tous = el("li", { role: "option", class: "suggestion suggestion-tous", "aria-selected": "false" }, icone("search"), `Voir tous les résultats pour « ${texte} »`);
     tous.addEventListener("mousedown", (e) => { e.preventDefault(); formulaire.requestSubmit(); });
     liste.replaceChildren(...lignes, tous);
@@ -340,16 +349,19 @@ function activerSuggestions(formulaire, categorie) {
     if (texte.length < 2) { fermer(); return; }
     const numero = ++numeroDemande;
     try {
-      const veutTitres = !estPersonne(choix);
+      const veutTitres = !estPersonne(choix) && choix !== "saga";
       const veutPersonnes = choix === "tout" || estPersonne(choix);
-      const [titres, personnes] = await Promise.all([
+      const veutSagas = choix === "tout" || choix === "saga";
+      const [titres, personnes, sagas] = await Promise.all([
         veutTitres ? source(`rechercher?q=${encodeURIComponent(texte)}`).then((page) => page.resultats.filter((r) => choix === "tout" || r.format === choix)) : [],
         veutPersonnes ? source(`personnes?q=${encodeURIComponent(texte)}${estPersonne(choix) ? `&metier=${choix}` : ""}`) : [],
+        veutSagas ? source(`sagas?q=${encodeURIComponent(texte)}`).catch(() => []) : [],
       ]);
       if (numero !== numeroDemande || champ.value.trim() !== texte) return; // on a continué à taper entre-temps
       const gardesTitres = titres.slice(0, choix === "tout" ? 6 : 8);
       const gardesPersonnes = personnes.slice(0, choix === "tout" ? 3 : 8);
-      if (gardesTitres.length || gardesPersonnes.length) dessiner(texte, choix, gardesTitres, gardesPersonnes); else fermer();
+      const gardeesSagas = sagas.slice(0, choix === "tout" ? 2 : 8);
+      if (gardesTitres.length || gardesPersonnes.length || gardeesSagas.length) dessiner(texte, choix, gardesTitres, gardesPersonnes, gardeesSagas); else fermer();
     } catch (erreur) { fermer(); }
   }
 
@@ -390,7 +402,7 @@ function creerMenuRecherche(formulaire, champ) {
     bouton.title = "Filtrer la recherche";
     champCat.value = choisie;
     champ.placeholder = { tout: "Rechercher un titre, une personne…", film: "Rechercher un film…", serie: "Rechercher une série…",
-      acteur: "Nom d'un acteur…", realisateur: "Nom d'un réalisateur…", producteur: "Nom d'un producteur…" }[choisie];
+      acteur: "Nom d'un acteur…", realisateur: "Nom d'un réalisateur…", producteur: "Nom d'un producteur…", saga: "Nom d'une saga…" }[choisie];
     panneau.replaceChildren(...CATEGORIES_RECHERCHE.map(([cle, libelle, aide]) => {
       const radio = el("input", { type: "radio", name: "categorie-recherche", value: cle, checked: cle === choisie });
       radio.addEventListener("change", () => {
@@ -436,6 +448,7 @@ function construireEntete() {
     if (!texte) return; // champ vide : on ouvre simplement le catalogue
     e.preventDefault();
     if (estPersonne(choix)) location.href = `catalogue.html?qp=${encodeURIComponent(texte)}&prole=${choix}&cat=${choix}`;
+    else if (choix === "saga") location.href = `catalogue.html?categorie=sagas&qs=${encodeURIComponent(texte)}&cat=saga`;
     else if (choix === "film" || choix === "serie") location.href = `catalogue.html?q=${encodeURIComponent(texte)}&type=${choix}&cat=${choix}`;
     else location.href = `catalogue.html?q=${encodeURIComponent(texte)}&cat=tout`;
   });

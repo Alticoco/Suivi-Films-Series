@@ -131,6 +131,20 @@ function saga(idCollection) {
   return avecCache(idCollection, "saga", () => fournisseur.saga(idCollection));
 }
 
+// Sagas : sans texte, les sagas connues (Star Wars, James Bond, Le Seigneur des anneaux...) ; avec un texte, une recherche par nom.
+// Chaque saga : { id, nom, affiche, nb_films }
+function sagas(texte) {
+  if (texte) return fournisseur.sagas(texte);
+  const resultat = [];
+  fournisseur.SAGAS_CONNUES.forEach((id) => {
+    try {
+      const s = saga(String(id));
+      if (s && s.films.length) resultat.push({ id: s.id, nom: s.nom, affiche: s.affiche || s.films[0].affiche, nb_films: s.films.length });
+    } catch (e) { /* une saga qui échoue est simplement omise */ }
+  });
+  return resultat;
+}
+
 // Les personnes (acteurs, réalisateurs...) portant ce nom
 function personnes(texte, metier) {
   return fournisseur.personnes(texte, metier);
@@ -206,4 +220,4 @@ function nettoyerCache() {
   return anciennes.length;
 }
 
-module.exports = { rechercher, decouvrir, explorer, personnes, saga, filtres, pays, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };
+module.exports = { rechercher, decouvrir, explorer, personnes, saga, sagas, filtres, pays, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };
