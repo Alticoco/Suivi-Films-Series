@@ -44,11 +44,85 @@ function creerGroupePersonnes(titre, personnes, avecRole) {
     el("div", { class: "personnes" }, personnes.map((p) => creerPersonne(p, avecRole ? p.role : ""))));
 }
 
-function creerTuile(libelle, valeur, details) {
-  return el("div", { class: "recap-tuile" },
-    el("span", { class: "recap-tuile-libelle" }, libelle),
+// Les classifications d'âge expliquées : [codes, nom, explication]
+const CLASSIFICATIONS = {
+  FR: {
+    titre: "France (cinéma et télévision)",
+    note: "Au cinéma, les mentions « moins de 12 / 16 / 18 ans » sont des interdictions à l'entrée ; à la télévision, ce sont des conseils affichés à l'écran.",
+    lignes: [
+      [["TP", "U"], "Tous publics", "Pour tout le monde, y compris les plus jeunes."],
+      [["10"], "Déconseillé aux moins de 10 ans", "Quelques scènes ou thèmes peuvent troubler les plus jeunes."],
+      [["12"], "Moins de 12 ans", "Violence, peur ou thèmes sensibles plus marqués."],
+      [["16"], "Moins de 16 ans", "Violence, sexualité ou thèmes difficiles."],
+      [["18"], "Moins de 18 ans", "Réservé aux adultes : contenu explicite."],
+    ],
+  },
+  USFILM: {
+    titre: "États-Unis — films (MPA)",
+    note: "Ces mentions sont des recommandations américaines, pas des interdictions légales.",
+    lignes: [
+      [["G"], "G — General Audiences", "Tous publics."],
+      [["PG"], "PG — Parental Guidance", "Accord parental conseillé : certaines scènes peuvent ne pas convenir aux enfants."],
+      [["PG-13"], "PG-13", "Déconseillé aux moins de 13 ans sans accompagnement d'un parent."],
+      [["R"], "R — Restricted", "Moins de 17 ans accompagnés d'un adulte : violence, langage ou thèmes adultes."],
+      [["NC-17"], "NC-17", "Interdit aux 17 ans et moins : contenu pour adultes."],
+      [["NR", "UR"], "NR — Non classé", "Aucune classification officielle."],
+    ],
+  },
+  USTV: {
+    titre: "États-Unis — séries (TV Parental Guidelines)",
+    note: "Ces mentions sont des recommandations américaines, pas des interdictions légales.",
+    lignes: [
+      [["TV-Y"], "TV-Y", "Adapté à tous les enfants, même les plus petits."],
+      [["TV-Y7"], "TV-Y7", "Pour les enfants à partir de 7 ans."],
+      [["TV-G"], "TV-G", "Tous publics."],
+      [["TV-PG"], "TV-PG", "Accord parental conseillé."],
+      [["TV-14"], "TV-14", "Déconseillé aux moins de 14 ans."],
+      [["TV-MA"], "TV-MA", "Public adulte (17 ans et plus)."],
+    ],
+  },
+};
+
+// Petite fenêtre d'information sur les classifications d'âge. "actuelle" = { valeur, pays } du titre (ou null),
+// pour mettre en évidence la ligne qui le concerne ; le groupe qui le concerne est affiché en premier.
+function ouvrirInfoClassifications(actuelle, format) {
+  const groupeActuel = !actuelle ? null : actuelle.pays === "FR" ? "FR" : format === "film" ? "USFILM" : "USTV";
+  const valeur = actuelle ? String(actuelle.valeur).toUpperCase().replace(/^[-+]/, "") : "";
+  const ordre = [groupeActuel, "FR", "USFILM", "USTV"].filter((cle, i, tout) => cle && tout.indexOf(cle) === i);
+
+  const fermer = el("button", { type: "button", class: "principal" }, "Fermer");
+  const dialogue = el("dialog", { class: "dialogue-info" },
+    el("h2", {}, "Comprendre les classifications d'âge"),
+    actuelle
+      ? el("p", { class: "info-actuelle" }, `Ce titre : ${actuelle.valeur} (${actuelle.pays === "FR" ? "France" : "États-Unis"})`)
+      : el("p", { class: "discret" }, "Aucune classification n'est connue pour ce titre. Voici ce que signifient les principales mentions."),
+    ...ordre.map((cle) => {
+      const groupe = CLASSIFICATIONS[cle];
+      return el("section", { class: "info-groupe" },
+        el("h3", {}, groupe.titre),
+        el("p", { class: "discret" }, groupe.note),
+        el("dl", {}, groupe.lignes.map(([codes, nom, explication]) => {
+          const concerne = cle === groupeActuel && codes.indexOf(valeur) !== -1;
+          return el("div", { class: `info-ligne${concerne ? " info-ligne-active" : ""}` },
+            el("dt", {}, codes.join(" / ")), el("dd", {}, el("strong", {}, nom), el("span", {}, explication)));
+        })));
+    }),
+    el("div", { class: "boutons-dialogue" }, fermer));
+  fermer.addEventListener("click", () => dialogue.close());
+  dialogue.addEventListener("close", () => dialogue.remove());
+  document.body.append(dialogue);
+  dialogue.showModal();
+}
+
+function creerTuile(libelle, valeur, details, quandClic) {
+  const contenu = [
+    el("span", { class: "recap-tuile-libelle" }, libelle, quandClic ? icone("info") : null),
     el("span", { class: "recap-tuile-valeur" }, valeur),
-    details ? el("span", { class: "recap-tuile-details" }, details) : null);
+    details ? el("span", { class: "recap-tuile-details" }, details) : null,
+  ];
+  // Une tuile cliquable (ex. classification) est un vrai bouton : accessible au clavier
+  if (!quandClic) return el("div", { class: "recap-tuile" }, contenu);
+  return el("button", { type: "button", class: "recap-tuile recap-tuile-bouton", title: "Cliquer pour comprendre les classifications d'âge", onclick: quandClic }, contenu);
 }
 
 // "d" = les détails renvoyés par /api/source/details
@@ -63,7 +137,8 @@ function creerRecapitulatif(d) {
       ? creerTuile("Box-office", d.box_office ? formatMontant(d.box_office) : "—")
       : creerTuile("Saisons", saisons ? String(saisons) : "—"),
     creerTuile("Studio", d.studio || "—"),
-    creerTuile("Classification", d.classification ? d.classification.valeur : "—", d.classification ? d.classification.pays === "FR" ? "France" : "États-Unis" : ""),
+    creerTuile("Classification", d.classification ? d.classification.valeur : "—", d.classification ? d.classification.pays === "FR" ? "France" : "États-Unis" : "",
+      () => ouvrirInfoClassifications(d.classification, d.format)),
     creerTuile("Score", d.note_source ? `${d.note_source.toFixed(1)}/10` : "—", d.nb_votes ? `${d.nb_votes} votes` : ""),
     creerTuile("Pays", pays.length ? pays.join(", ") : "—"),
   ];

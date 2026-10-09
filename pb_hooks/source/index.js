@@ -65,8 +65,9 @@ function avecCache(idSource, typeDonnee, chercher, versionMin) {
 // --- Fonctions neutres -----------------------------------------------------
 
 // Une recherche (ou une liste de découverte) n'est pas mise en cache : c'est du direct.
-function rechercher(texte, page) {
-  return fournisseur.rechercher(texte, page);
+// "filtres" (facultatif) : type, genres, pays, années (voir explorer) pour retirer ce qui n'intéresse pas
+function rechercher(texte, page, filtres) {
+  return filtrerParPays(fournisseur.rechercher(texte, page, filtres), filtres || {});
 }
 
 function decouvrir(categorie, page) {
@@ -82,6 +83,11 @@ function decouvrir(categorie, page) {
 function explorer(parametres) {
   // Avec une personne choisie : sa filmographie (mêmes filtres) ; sinon le catalogue entier
   const page = parametres.personne_id ? fournisseur.filmographie(parametres) : fournisseur.explorer(parametres);
+  return filtrerParPays(page, parametres);
+}
+
+// Écarte d'une page de résultats les titres qui ne passent pas les filtres de pays
+function filtrerParPays(page, parametres) {
   const liste = (v) => (v || "").split(",").map((x) => x.trim()).filter((x) => x);
   const inclus = liste(parametres.pays_inclus);
   const exclus = liste(parametres.pays_exclus);
