@@ -452,6 +452,17 @@ const textePersonne = (parametres.get("qp") || "").trim();
 const ROLES_PERSONNE = { acteur: "Acteur", realisateur: "Réalisateur", producteur: "Producteur" };
 const rolePersonne = (valeur) => (ROLES_PERSONNE[valeur] ? valeur : "acteur");
 const categorieChoisie = CATEGORIES.some(([cle]) => cle === parametres.get("categorie")) ? parametres.get("categorie") : "tendances";
+// Ce que chaque onglet « se balader » représente : les filtres s'ajoutent à cette base
+// (ex. « Séries les mieux notées » + exclure « Animation » = les séries les mieux notées sans animation)
+const BASES_CATEGORIES = {
+  tendances: { type: "tous", tri: "populaires" },
+  films_a_l_affiche: { type: "film", tri: "populaires", depuisJours: 60 },
+  films_populaires: { type: "film", tri: "populaires" },
+  series_populaires: { type: "serie", tri: "populaires" },
+  films_mieux_notes: { type: "film", tri: "mieux_notes" },
+  series_mieux_notees: { type: "serie", tri: "mieux_notes" },
+};
+const baseCategorie = (!parametres.get("q") && BASES_CATEGORIES[categorieChoisie]) || BASES_CATEGORIES.tendances;
 
 // ---------- Filtres : inclure / exclure ----------
 // Les choix se lisent dans l'adresse de la page (?type=film&gi=drame&ge=horreur&pe=asie…) :
@@ -465,13 +476,13 @@ const etatDepuisUrl = (inclus, exclus) => {
   return etat;
 };
 const filtres = {
-  type: ["film", "serie"].includes(parametres.get("type")) ? parametres.get("type") : "tous",
+  type: ["film", "serie", "tous"].includes(parametres.get("type")) ? parametres.get("type") : baseCategorie.type,
   genres: etatDepuisUrl("gi", "ge"),
   pays: etatDepuisUrl("pi", "pe"),
   themes: etatDepuisUrl("ti", "te"),
   anneeMin: (parametres.get("amin") || "").replace(/\D/g, "").slice(0, 4),
   anneeMax: (parametres.get("amax") || "").replace(/\D/g, "").slice(0, 4),
-  tri: ["mieux_notes", "recents"].includes(parametres.get("tri")) ? parametres.get("tri") : "populaires",
+  tri: ["populaires", "mieux_notes", "recents"].includes(parametres.get("tri")) ? parametres.get("tri") : baseCategorie.tri,
   // Studio ou chaîne choisi (lien depuis une fiche) : { id, nom, type: "studio" | "chaine" } (ou null)
   societe: /^[0-9]+$/.test(parametres.get("soc") || "")
     ? { id: parametres.get("soc"), nom: (parametres.get("snom") || "").slice(0, 80), type: parametres.get("stype") === "chaine" ? "chaine" : "studio" }
@@ -485,6 +496,7 @@ const filtres = {
 const clesFiltres = texteRecherche ? ["type", "gi", "ge", "pi", "pe", "amin", "amax"] : ["type", "gi", "ge", "pi", "pe", "ti", "te", "amin", "amax", "tri", "pers", "soc"];
 const filtresActifs = clesFiltres.some((cle) => parametres.has(cle));
 if (texteRecherche) { filtres.personne = null; filtres.societe = null; filtres.themes = {}; filtres.tri = "populaires"; }
+// Les filtres s'ajoutent à l'onglet choisi : on n'a donc plus besoin d'écrire le type / le tri de l'onglet dans l'adresse
 
 const TRIS = { populaires: "Les plus populaires", mieux_notes: "Les mieux notés", recents: "Les plus récents" };
 const cleDe = (etat, valeur) => Object.keys(etat).filter((cle) => etat[cle] === valeur).join(",");
@@ -498,6 +510,7 @@ function parametresExplorer(page) {
     ["annee_min", filtres.anneeMin], ["annee_max", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
   if (filtres.personne) { p.set("personne_id", filtres.personne.id); p.set("personne_role", filtres.personne.role); }
   if (filtres.societe) { p.set("societe_id", filtres.societe.id); p.set("societe_type", filtres.societe.type); }
+  if (baseCategorie.depuisJours && filtres.tri === baseCategorie.tri) p.set("depuis_jours", baseCategorie.depuisJours);
   return p.toString();
 }
 
@@ -505,17 +518,18 @@ function parametresExplorer(page) {
 function adresseFiltres() {
   const p = new URLSearchParams();
   if (texteRecherche) p.set("q", texteRecherche);
-  if (filtres.type !== "tous") p.set("type", filtres.type);
+  if (categorieChoisie !== "tendances" && !texteRecherche) p.set("categorie", categorieChoisie);
+  if (filtres.type !== baseCategorie.type) p.set("type", filtres.type);
   [["gi", cleDe(filtres.genres, 1)], ["ge", cleDe(filtres.genres, -1)], ["pi", cleDe(filtres.pays, 1)], ["pe", cleDe(filtres.pays, -1)],
     ["ti", cleDe(filtres.themes, 1)], ["te", cleDe(filtres.themes, -1)], ["amin", filtres.anneeMin], ["amax", filtres.anneeMax]].forEach(([nom, valeur]) => { if (valeur) p.set(nom, valeur); });
-  if (filtres.tri !== "populaires") p.set("tri", filtres.tri);
+  if (filtres.tri !== baseCategorie.tri) p.set("tri", filtres.tri);
   if (filtres.personne) { p.set("pers", filtres.personne.id); p.set("pnom", filtres.personne.nom); p.set("prole", filtres.personne.role); }
   if (filtres.societe) { p.set("soc", filtres.societe.id); p.set("snom", filtres.societe.nom); p.set("stype", filtres.societe.type); }
   return p.toString() ? `catalogue.html?${p}` : "catalogue.html";
 }
 
 const nombreFiltres = () => Object.keys(filtres.genres).length + Object.keys(filtres.pays).length + Object.keys(filtres.themes).length
-  + (filtres.type !== "tous" ? 1 : 0) + (filtres.anneeMin || filtres.anneeMax ? 1 : 0) + (filtres.tri !== "populaires" ? 1 : 0)
+  + (filtres.type !== baseCategorie.type ? 1 : 0) + (filtres.anneeMin || filtres.anneeMax ? 1 : 0) + (filtres.tri !== baseCategorie.tri ? 1 : 0)
   + (filtres.personne ? 1 : 0) + (filtres.societe ? 1 : 0);
 
 // Une phrase qui résume les filtres actifs (affichée au-dessus de la grille)
@@ -523,7 +537,7 @@ function resumeFiltres(choix) {
   const nom = (cle) => (choix.genres.concat(choix.pays, choix.regions, choix.themes || []).find((x) => x.cle === cle) || {}).libelle || (/^[A-Z]{2}$/.test(cle) ? nomPays(cle) : cle);
   const liste = (a, b) => [a, b].join(",").split(",").filter((x) => x).map(nom);
   const parties = [];
-  if (filtres.type !== "tous") parties.push(filtres.type === "film" ? "films" : "séries");
+  if (filtres.type !== "tous" && filtres.type !== baseCategorie.type) parties.push(filtres.type === "film" ? "films" : "séries");
   if (filtres.personne) parties.push(`${{ realisateur: "réalisés par", producteur: "produits par", acteur: "avec" }[filtres.personne.role]} ${filtres.personne.nom}`);
   if (filtres.societe) parties.push(`${filtres.societe.type === "chaine" ? "diffusés sur" : "du studio"} ${filtres.societe.nom}`);
   const inclus = liste(cleDe(filtres.genres, 1), cleDe(filtres.pays, 1)).concat(liste(cleDe(filtres.themes, 1), ""));
@@ -531,7 +545,7 @@ function resumeFiltres(choix) {
   if (inclus.length) parties.push(`avec : ${inclus.join(", ")}`);
   if (exclus.length) parties.push(`sans : ${exclus.join(", ")}`);
   if (filtres.anneeMin || filtres.anneeMax) parties.push(`${filtres.anneeMin || "…"} – ${filtres.anneeMax || "…"}`);
-  if (!texteRecherche) parties.push(TRIS[filtres.tri].toLowerCase()); // le tri n'existe pas pendant une recherche par nom
+  if (!texteRecherche && filtres.tri !== baseCategorie.tri) parties.push(TRIS[filtres.tri].toLowerCase()); // le tri n'existe pas pendant une recherche par nom
   return parties.join(" · ");
 }
 
@@ -621,7 +635,7 @@ function construirePanneauFiltres(choix) {
       texteRecherche ? null : el("div", { class: "champ" }, el("label", {}, "Trier par"), choixTri)),
     el("div", { class: "boutons-filtres" },
       el("button", { type: "button", class: "principal", onclick: () => { location.href = adresseFiltres(); } }, "Appliquer les filtres"),
-      el("button", { type: "button", onclick: () => { location.href = texteRecherche ? `catalogue.html?q=${encodeURIComponent(texteRecherche)}` : "catalogue.html"; } }, "Réinitialiser")));
+      el("button", { type: "button", onclick: () => { location.href = texteRecherche ? `catalogue.html?q=${encodeURIComponent(texteRecherche)}` : categorieChoisie !== "tendances" ? `catalogue.html?categorie=${categorieChoisie}` : "catalogue.html"; } }, "Réinitialiser")));
 
   const panneau = el("details", { class: "panneau-filtres" }, el("summary", {}, "Filtres", compteur), corps);
   majCompteur();
@@ -690,14 +704,19 @@ function afficherCategories() {
       el("a", { href: "catalogue.html" }, icone("arrow-left"), "Revenir à la découverte"));
     return;
   }
+  // Changer d'onglet garde les filtres (genres, pays, thèmes, années, personne, studio) mais prend le type et le tri du nouvel onglet
+  const adresseOnglet = (cle) => {
+    const p = new URLSearchParams(location.search);
+    ["categorie", "type", "tri", "ouvrir"].forEach((nom) => p.delete(nom));
+    if (cle !== "tendances") p.set("categorie", cle);
+    return p.toString() ? `catalogue.html?${p}` : "catalogue.html";
+  };
   if (filtresActifs) {
     // Le résumé des filtres est complété quand les choix de filtres sont chargés (voir plus bas)
-    zone.replaceChildren(el("span", { class: "discret", id: "resume-filtres" }, "Résultats filtrés "),
-      el("a", { href: "catalogue.html" }, icone("arrow-left"), "Revenir à la découverte"));
-    return;
+    zone.after(el("p", { class: "discret", id: "resume-filtres" }, "Résultats filtrés "));
   }
   zone.replaceChildren(...CATEGORIES.map(([cle, libelle]) =>
-    el("a", { href: `catalogue.html?categorie=${cle}`, class: `pastille-categorie${cle === categorieChoisie ? " active" : ""}`, "aria-current": cle === categorieChoisie ? "true" : null }, libelle)));
+    el("a", { href: filtresActifs ? adresseOnglet(cle) : `catalogue.html?categorie=${cle}`, class: `pastille-categorie${cle === categorieChoisie ? " active" : ""}`, "aria-current": cle === categorieChoisie ? "true" : null }, libelle)));
 }
 
 document.getElementById("bouton-manuel").addEventListener("click", ouvrirAjoutManuel);
