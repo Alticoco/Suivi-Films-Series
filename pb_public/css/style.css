@@ -714,3 +714,5 @@ a.personne-lien:hover .personne-nom { color: #fff; text-decoration: underline; }
 }
 .carte-saga-vide { display: flex; align-items: center; justify-content: center; padding: var(--espace-2); text-align: center; color: var(--couleur-texte-discret); }
 .carte-saga:hover img { transform: translateY(-2px); box-shadow: var(--ombre-survol); }
+
+.barre-saga { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espace-3); margin: var(--espace-3) 0 var(--espace-2); }

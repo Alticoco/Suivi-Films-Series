@@ -718,6 +718,46 @@ async function afficherPersonnes() {
   }
 }
 
+// « Toute la saga vue » : chaque film devient « vu avant » (sans date). Les films déjà vus ne bougent pas,
+// ceux qui ne sont pas encore sortis (sans année, ou année à venir) sont ignorés.
+function ouvrirSagaToutVue(films) {
+  const anneeEnCours = new Date().getFullYear();
+  const sortis = films.filter((f) => f.annee && f.annee <= anneeEnCours);
+  const dejaVus = sortis.filter((f) => { const t = bibliotheque.get(cleTitre(f.format, f.id_source)); return t && (t.vu_avant || t.statut === "termine"); });
+  const aFaire = sortis.filter((f) => !dejaVus.includes(f));
+  const ignores = films.length - sortis.length;
+  const dejaDans = aFaire.filter((f) => bibliotheque.has(cleTitre(f.format, f.id_source))).length;
+  ouvrirDialogue({
+    titre: "Marquer toute la saga comme vue ?",
+    libelleValider: aFaire.length ? `Marquer ${aFaire.length} film${aFaire.length > 1 ? "s" : ""} comme vu${aFaire.length > 1 ? "s" : ""}` : "Fermer",
+    remplir: (formulaire) => formulaire.append(...[
+      el("p", {}, aFaire.length
+        ? `${aFaire.length} film${aFaire.length > 1 ? "s seront" : " sera"} marqué${aFaire.length > 1 ? "s" : ""} « vu avant » (sans date), et ajouté${aFaire.length > 1 ? "s" : ""} à ta bibliothèque s'il n'y est pas déjà.`
+        : "Tous les films sortis de cette saga sont déjà vus : il n'y a rien à faire."),
+      dejaVus.length ? el("p", { class: "discret" }, `${dejaVus.length} film${dejaVus.length > 1 ? "s" : ""} déjà vu${dejaVus.length > 1 ? "s" : ""} : ${dejaVus.length > 1 ? "ils ne changent" : "il ne change"} pas.`) : null,
+      dejaDans ? el("p", { class: "discret" }, `${dejaDans} ${dejaDans > 1 ? "sont" : "est"} déjà dans ta bibliothèque (à voir, en cours…) : ${dejaDans > 1 ? "ils passent" : "il passe"} à « terminé ».`) : null,
+      ignores ? el("p", { class: "discret" }, `${ignores} film${ignores > 1 ? "s" : ""} pas encore sorti${ignores > 1 ? "s" : ""} (ou sans date) ${ignores > 1 ? "sont ignorés" : "est ignoré"}.`) : null].filter(Boolean)),
+    valider: async () => {
+      if (!aFaire.length) return;
+      await enParallele(aFaire, async (f) => {
+        const existant = bibliotheque.get(cleTitre(f.format, f.id_source));
+        if (existant) {
+          bibliotheque.set(cleTitre(f.format, f.id_source), await pbModifier("titres", existant.id, { vu_avant: true, statut: "termine" }));
+        } else {
+          const titre = await pbCreer("titres", {
+            source: "tmdb", id_source: f.id_source, format_source: "film", type: "film",
+            titre: f.titre, annee: f.annee || 0, statut: "termine", vu_avant: true,
+          });
+          bibliotheque.set(cleTitre(f.format, f.id_source), titre);
+          source(`details/film/${f.id_source}`).catch(() => {}); // prépare le cache
+        }
+        majPastille(f);
+      }, () => {});
+      toast(`${aFaire.length} film${aFaire.length > 1 ? "s" : ""} marqué${aFaire.length > 1 ? "s" : ""} comme vu${aFaire.length > 1 ? "s" : ""} (avant).`);
+    },
+  });
+}
+
 // Une saga (?saga=ID) : tous ses films dans l'ordre de sortie
 const idSaga = /^[0-9]+$/.test(parametres.get("saga") || "") ? parametres.get("saga") : "";
 async function afficherSaga() {
@@ -728,6 +768,9 @@ async function afficherSaga() {
   try {
     const [s] = await Promise.all([source(`saga/${idSaga}`), chargerBibliotheque()]);
     document.getElementById("titre-saga").textContent = `Saga « ${s.nom.replace(/ - Saga$/i, "")} » · ${s.films.length} film${s.films.length > 1 ? "s" : ""}, dans l'ordre de sortie `;
+    grille.before(el("div", { class: "barre-saga" },
+      el("button", { type: "button", class: "principal", onclick: () => ouvrirSagaToutVue(s.films) }, icone("check"), "Marquer toute la saga comme vue"),
+      el("span", { class: "discret" }, "Les films sont enregistrés « vu avant », sans date.")));
     grille.append(...s.films.map(creerCarte));
     completerPays(s.films);
     message.textContent = "";
