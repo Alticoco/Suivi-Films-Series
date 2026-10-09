@@ -196,6 +196,29 @@ function creerRecapitulatif(d) {
     equipe.length ? el("div", { class: "recap-equipe" }, equipe) : null);
 }
 
+// « Titres similaires » : ce que TMDB recommande à partir de CE titre (rien à voir avec mes goûts).
+// "d" = détails du titre ; "choisir(titre)" est appelée au clic ; "dejaDansLaBibliotheque(titre)" (facultatif) ajoute une coche.
+// La zone reste cachée tant qu'on n'a pas la liste (ou s'il n'y a rien à montrer).
+function creerSimilaires(d, choisir, dejaDansLaBibliotheque) {
+  const zone = el("div", { class: "saga similaires", hidden: true });
+  source(`similaires/${d.format}/${d.id_source}`).then((liste) => {
+    if (!liste.length) return;
+    zone.replaceChildren(
+      el("h4", {}, `${d.format === "film" ? "Films" : "Séries"} similaires · recommandés d'après ce titre`),
+      el("div", { class: "saga-films" }, liste.map((titre) => {
+        const adresse = urlAffiche(titre.affiche, "w185");
+        return el("button", { type: "button", class: "saga-film", title: `Voir « ${titre.titre} »`, onclick: () => choisir(titre) },
+          el("span", { class: "saga-affiche-cadre" },
+            adresse ? el("img", { class: "saga-affiche", src: adresse, alt: "", loading: "lazy" }) : el("span", { class: "saga-affiche saga-sans-affiche" }, "Pas d'affiche"),
+            dejaDansLaBibliotheque && dejaDansLaBibliotheque(titre) ? el("span", { class: "pastille", title: "Dans ma bibliothèque" }, icone("check")) : null),
+          el("span", { class: "saga-titre" }, titre.titre),
+          el("span", { class: "saga-annee" }, titre.annee ? String(titre.annee) : "à venir"));
+      })));
+    zone.hidden = false;
+  }).catch(() => { /* un petit plus : sans lui, la fiche s'affiche quand même */ });
+  return zone;
+}
+
 // Les autres films de la saga (ex. Avatar 1, 2, 3) : on passe de l'un à l'autre en un clic.
 // "choisir(film)" est appelée au clic sur un film ; "dejaDansLaBibliotheque(film)" (facultatif) ajoute une coche.
 // Renvoie null si le film ne fait pas partie d'une saga ; la zone reste cachée tant qu'on n'a pas la liste.
