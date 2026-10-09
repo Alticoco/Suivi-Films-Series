@@ -12,11 +12,9 @@ const grille = document.getElementById("grille");
 async function charger() {
   message.textContent = "Chargement…";
   try {
-    const [titres, visionnages, resumes] = await Promise.all([
-      pbListe("titres"),
-      pbListe("visionnages"),
-      source("resumes").catch(() => ({})), // sans ça, on affiche juste moins d'affiches
-    ]);
+    const [titres, visionnages] = await Promise.all([pbListe("titres"), pbListe("visionnages")]);
+    // On n'attend pas les affiches plus de 1,2 s ; si elles arrivent après, on complète la grille
+    const resumes = await chargerResumes(1200, (tard) => { lignes = construireLignes(titres, visionnages, tard); afficher(); });
     lignes = construireLignes(titres, visionnages, resumes);
   } catch (erreur) {
     message.className = "ko";

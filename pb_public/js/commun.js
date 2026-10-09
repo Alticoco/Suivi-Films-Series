@@ -212,6 +212,18 @@ function creerBoutonCoeur(lireTitre, apres) {
   return bouton;
 }
 
+// Les affiches (route « resumes ») peuvent être un peu lentes : on attend "delai" millisecondes au plus,
+// puis la page s'affiche sans elles. Si elles arrivent plus tard, "quandTard(resumes)" est appelée pour
+// compléter l'affichage. Renvoie les affiches si elles sont arrivées à temps, sinon un objet vide.
+async function chargerResumes(delai, quandTard) {
+  const demande = source("resumes").catch(() => ({}));
+  const trop = Symbol("trop long");
+  const premier = await Promise.race([demande, new Promise((resolve) => setTimeout(() => resolve(trop), delai))]);
+  if (premier !== trop) return premier;
+  demande.then(quandTard);
+  return {};
+}
+
 // ---------- Messages éphémères ----------
 function toast(texte, erreur) {
   const message = el("div", { class: "toast" + (erreur ? " toast-erreur" : "") }, texte);

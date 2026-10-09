@@ -7,6 +7,7 @@
 //   GET /api/source/decouvrir?categorie=tendances&page=1   (se balader dans le catalogue)
 //   GET /api/source/explorer?type=…&genres_inclus=…&pays_exclus=…  (parcourir avec des filtres)
 //   GET /api/source/personnes?q=nom   (acteurs, réalisateurs...) ; explorer accepte personne_id + personne_role
+//   GET /api/source/saga/{id}   (les films d'une saga : Avatar 1, 2, 3…)
 //   GET /api/source/filtres, GET /api/source/pays?ids=film:603,…
 //   GET /api/source/details/{format}/{id}      format = film | serie
 //   GET /api/source/saisons/{id}
@@ -65,6 +66,13 @@ routerAdd("GET", "/api/source/personnes", (e) => {
   const texte = (e.request.url.query().get("q") || "").trim();
   if (!texte) return e.json(400, { message: "Paramètre q manquant" });
   return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.personnes(texte));
+});
+
+// Les films d'une saga : GET /api/source/saga/{idCollection}
+routerAdd("GET", "/api/source/saga/{id}", (e) => {
+  const id = e.request.pathValue("id");
+  if (!/^[0-9]+$/.test(id)) return e.json(400, { message: "Identifiant de saga invalide" });
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.saga(id));
 });
 
 // Pays de plusieurs titres : GET /api/source/pays?ids=film:603,serie:1399

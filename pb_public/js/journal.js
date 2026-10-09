@@ -79,9 +79,9 @@ async function demarrer() {
   const message = document.getElementById("message");
   const zone = document.getElementById("journal");
   try {
-    const [titres, visionnages, resumes] = await Promise.all([
-      pbListe("titres"), pbListe("visionnages"), source("resumes").catch(() => ({})),
-    ]);
+    const [titres, visionnages] = await Promise.all([pbListe("titres"), pbListe("visionnages")]);
+    // Les affiches sont un plus : on ne les attend pas plus de 1,2 s (le journal s'affiche d'abord sans elles)
+    const resumes = await chargerResumes(1200, () => {});
     const entrees = construireEntrees(titres, visionnages);
     document.getElementById("compteur").textContent = `${visionnages.length} visionnage(s)`;
     if (!entrees.length) {

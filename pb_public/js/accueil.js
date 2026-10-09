@@ -9,15 +9,17 @@ function afficherEtat(id, ok, texte) {
   element.className = ok ? "ok icone-texte" : "ko icone-texte";
 }
 
-function vignette(titre, affiche) {
+// "classe" : style de l'affiche (petite vignette par défaut, ou grande affiche de carrousel)
+function vignette(titre, affiche, classe) {
+  classe = classe || "vignette";
   const adresse = urlImageTitre(titre, affiche, "w185");
-  if (adresse) return el("img", { class: "vignette", src: adresse, alt: `Affiche de ${titre.titre}`, loading: "lazy" });
-  const vide = el("div", { class: "vignette vignette-vide" }, "?");
+  if (adresse) return el("img", { class: classe, src: adresse, alt: `Affiche de ${titre.titre}`, loading: "lazy" });
+  const vide = el("div", { class: `${classe} vignette-vide` }, "?");
   // Titre TMDB dont l'affiche n'est pas encore en cache : on la demande, puis on remplace le « ? »
   if (titre.source === "tmdb") {
     source(`details/${titre.format_source}/${titre.id_source}`).then((d) => {
       const url = urlAffiche(d.affiche, "w185");
-      if (url) vide.replaceWith(el("img", { class: "vignette", src: url, alt: `Affiche de ${titre.titre}`, loading: "lazy" }));
+      if (url) vide.replaceWith(el("img", { class: classe, src: url, alt: `Affiche de ${titre.titre}`, loading: "lazy" }));
     }).catch(() => {});
   }
   return vide;
@@ -62,32 +64,63 @@ function dernierVisionnageParTitre(visionnages) {
   return derniers;
 }
 
-function carteDernier(titre, visionnage, affiche) {
-  const precision = visionnage.episode > 0 ? ` · S${visionnage.saison}E${visionnage.episode}` : "";
-  return el("a", { class: "dernier", href: `fiche.html?id=${titre.id}` },
-    vignette(titre, affiche),
-    el("div", {},
-      el("strong", {}, titre.titre),
-      el("p", { class: "discret" }, `Vu le ${formatDate(visionnage.date)}${precision}`),
-      visionnage.note ? el("p", { class: "ma-note" }, icone("star"), String(visionnage.note)) : null));
+// Les derniers titres vus, séparés films / séries, du plus récent au plus ancien.
+// Un titre « déjà vu avant » (sans date de visionnage) compte à la date où je l'ai ajouté.
+function derniersVus(titres, visionnages, nombre) {
+  const dernierParTitre = dernierVisionnageParTitre(visionnages);
+  const lignes = [];
+  for (const titre of titres) {
+    const visionnage = dernierParTitre.get(titre.id);
+    if (visionnage) lignes.push({ titre, visionnage, cle: `${visionnage.date}|${visionnage.created}` });
+    else if (titre.vu_avant) lignes.push({ titre, visionnage: null, cle: `${titre.ajoute_le}` });
+  }
+  lignes.sort((a, b) => (a.cle < b.cle ? 1 : -1));
+  return {
+    films: lignes.filter((l) => estFilm(l.titre)).slice(0, nombre),
+    series: lignes.filter((l) => !estFilm(l.titre)).slice(0, nombre),
+  };
+}
+
+function carteCarrousel(ligne, affiche, estLeDernier) {
+  const { titre, visionnage } = ligne;
+  const precision = visionnage && visionnage.episode > 0 ? ` · S${visionnage.saison}E${visionnage.episode}` : "";
+  const quand = visionnage ? `Vu le ${formatDate(visionnage.date)}${precision}` : `Vu avant · ajouté le ${formatDate(titre.ajoute_le)}`;
+  return el("a", { class: "carrousel-carte", href: `fiche.html?id=${titre.id}`, role: "listitem" },
+    el("span", { class: "carrousel-cadre" },
+      vignette(titre, affiche, "carrousel-affiche"),
+      estLeDernier ? el("span", { class: "carrousel-badge" }, "Dernier") : null),
+    el("strong", { class: "carrousel-titre" }, titre.titre),
+    el("span", { class: "discret carrousel-quand" }, quand),
+    visionnage && visionnage.note ? el("span", { class: "ma-note" }, icone("star"), String(visionnage.note)) : null);
+}
+
+// Une rangée d'affiches qu'on fait défiler (flèches, molette, glisser au doigt, flèches du clavier).
+function creerCarrousel(lignes, resume, vide, nomListe) {
+  if (!lignes.length) return el("p", { class: "discret" }, vide);
+  const piste = el("div", { class: "carrousel-piste", role: "list", "aria-label": nomListe, tabindex: "0" },
+    lignes.map((ligne, i) => carteCarrousel(ligne, resume(ligne.titre), i === 0)));
+  const precedent = el("button", { type: "button", class: "carrousel-bouton carrousel-precedent", "aria-label": "Voir les précédents" }, icone("arrow-left"));
+  const suivant = el("button", { type: "button", class: "carrousel-bouton carrousel-suivant", "aria-label": "Voir les suivants" }, icone("arrow-right"));
+  const defiler = (sens) => piste.scrollBy({ left: sens * Math.max(piste.clientWidth * 0.8, 160), behavior: "smooth" });
+  precedent.addEventListener("click", () => defiler(-1));
+  suivant.addEventListener("click", () => defiler(1));
+  // Les flèches ne s'affichent que s'il y a quelque chose à voir de chaque côté
+  const majFleches = () => {
+    precedent.hidden = piste.scrollLeft <= 2;
+    suivant.hidden = piste.scrollLeft + piste.clientWidth >= piste.scrollWidth - 2;
+  };
+  piste.addEventListener("scroll", majFleches, { passive: true });
+  window.addEventListener("resize", majFleches);
+  setTimeout(majFleches, 50);
+  setTimeout(majFleches, 600); // une fois les affiches chargées
+  return el("div", { class: "carrousel" }, precedent, piste, suivant);
 }
 
 function afficherDerniers(titres, visionnages, resumes) {
-  const parId = new Map(titres.map((t) => [t.id, t]));
-  const meilleur = { film: null, serie: null };
-  for (const v of dernierVisionnageParTitre(visionnages).values()) {
-    const t = parId.get(v.titre);
-    if (!t) continue;
-    const genre = estFilm(t) ? "film" : "serie";
-    const actuel = meilleur[genre];
-    if (!actuel || `${v.date}|${v.created}` > `${actuel.v.date}|${actuel.v.created}`) meilleur[genre] = { t, v };
-  }
+  const { films, series } = derniersVus(titres, visionnages, 5);
   const resume = (t) => (t.source === "tmdb" ? (resumes[`${t.format_source}:${t.id_source}`] || {}).affiche : null);
-  for (const [genre, zoneId, vide] of [["film", "dernier-film", "Aucun film vu pour l'instant."], ["serie", "derniere-serie", "Aucune série vue pour l'instant."]]) {
-    const zone = document.getElementById(zoneId);
-    const choix = meilleur[genre];
-    zone.replaceChildren(choix ? carteDernier(choix.t, choix.v, resume(choix.t)) : el("p", { class: "discret" }, vide));
-  }
+  document.getElementById("dernier-film").replaceChildren(creerCarrousel(films, resume, "Aucun film vu pour l'instant.", "Derniers films vus"));
+  document.getElementById("derniere-serie").replaceChildren(creerCarrousel(series, resume, "Aucune série vue pour l'instant.", "Dernières séries vues"));
 }
 
 // ---------- Séries en cours ----------
@@ -195,9 +228,9 @@ async function demarrer() {
   afficherRappelSauvegarde();
   afficherMiniStats();
   try {
-    const [titres, visionnages, resumes] = await Promise.all([
-      pbListe("titres"), pbListe("visionnages"), source("resumes").catch(() => ({})),
-    ]);
+    const [titres, visionnages] = await Promise.all([pbListe("titres"), pbListe("visionnages")]);
+    // On n'attend pas les affiches plus de 1,2 s : mes données s'affichent tout de suite
+    const resumes = await chargerResumes(1200, (tard) => afficherDerniers(titres, visionnages, tard));
     afficherDerniers(titres, visionnages, resumes);
     afficherEnCours(titres, visionnages, resumes);
   } catch (erreur) {
