@@ -253,7 +253,7 @@ dialog.dialogue-detail { width: min(60rem, 96vw); max-height: 92vh; overflow-y: 
   background: transparent; border: none; color: var(--couleur-texte-discret);
 }
 .dialogue-detail .fermer:hover { color: var(--couleur-texte); }
-.detail { display: grid; grid-template-columns: 15rem 1fr; gap: var(--espace-6); padding-top: var(--espace-2); }
+.detail { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: var(--espace-6); padding-top: var(--espace-2); }
 .detail-affiche .affiche { border-radius: var(--rayon-moyen); border: 1px solid var(--couleur-trait); }
 .detail-infos h2 { margin: 0 var(--espace-8) var(--espace-1) 0; }
 .detail-infos p { margin: var(--espace-2) 0; }
@@ -475,7 +475,8 @@ input[type="file"]::file-selector-button {
 .recap { margin: var(--espace-4) 0; }
 .recap-genres { display: flex; flex-wrap: wrap; gap: var(--espace-2); margin-bottom: var(--espace-3); }
 .recap-genre { padding: 3px 12px; border-radius: var(--rayon-pilule); background: var(--couleur-panneau); border: 1px solid var(--couleur-separateur); font-size: var(--taille-ui); font-weight: 500; }
-.recap-tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: var(--espace-2); }
+.recap-tuiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--espace-2); } /* 2 rangées de 3 blocs */
+@media (max-width: 460px) { .recap-tuiles { grid-template-columns: repeat(2, 1fr); } }
 .recap-tuile {
   background: var(--couleur-fond); border: 1px solid var(--couleur-trait); border-radius: var(--rayon-moyen);
   padding: var(--espace-3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; min-height: 4.5rem;
@@ -486,7 +487,7 @@ input[type="file"]::file-selector-button {
 .recap-tuile-details { font-size: 0.7rem; color: var(--couleur-texte-discret); font-family: var(--police-mono); }
 .recap-equipe { display: flex; flex-wrap: wrap; gap: var(--espace-4) var(--espace-6); margin-top: var(--espace-4); padding-top: var(--espace-4); border-top: 1px solid var(--couleur-separateur); }
 .recap-groupe h4 { margin: 0 0 var(--espace-2); font-family: var(--police-mono); font-size: var(--taille-etiquette); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--couleur-texte-discret); text-align: center; }
-.personnes { display: flex; gap: var(--espace-3); }
+.personnes { display: flex; flex-wrap: wrap; gap: var(--espace-3); }
 .personne { width: 5rem; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
 .personne-photo { width: 3.5rem; height: 3.5rem; border-radius: var(--rayon-pilule); object-fit: cover; background: var(--couleur-panneau); border: 1px solid var(--couleur-trait); }
 .personne-initiales { display: flex; align-items: center; justify-content: center; font-family: var(--police-mono); color: var(--couleur-texte-discret); }
@@ -545,3 +546,20 @@ dialog.dialogue-info { width: min(40rem, 94vw); max-height: 90vh; overflow-y: au
 .info-ligne dd { margin: 0; display: flex; flex-direction: column; font-size: var(--taille-ui); }
 .info-ligne dd span { color: var(--couleur-texte-discret); }
 .info-ligne-active { background: var(--couleur-menthe-douce); border-color: var(--couleur-menthe); }
+
+/* ---------- Suggestions de la barre de recherche ---------- */
+.recherche { position: relative; }
+.suggestions {
+  position: absolute; left: 0; right: 0; top: 100%; z-index: 60; margin: 0; padding: var(--espace-1); list-style: none;
+  background: var(--couleur-carte); border: 1px solid var(--couleur-contour); border-radius: var(--rayon-moyen); box-shadow: var(--ombre-fenetre);
+  max-height: 70vh; overflow-y: auto; min-width: min(24rem, 92vw);
+}
+.suggestion { display: flex; align-items: center; gap: var(--espace-3); padding: var(--espace-2); border-radius: var(--rayon-petit); cursor: pointer; }
+.suggestion:hover, .suggestion.active { background: var(--couleur-panneau); }
+.suggestion-affiche { width: 2rem; height: 3rem; object-fit: cover; border-radius: var(--rayon-petit); background: var(--couleur-fond); flex-shrink: 0; }
+.suggestion-texte { display: flex; flex-direction: column; min-width: 0; font-size: var(--taille-ui); line-height: 1.3; }
+.suggestion-texte .discret { font-family: var(--police-mono); font-size: 0.72rem; }
+.suggestion-tous { color: var(--couleur-texte-discret); font-size: var(--taille-ui); border-top: 1px solid var(--couleur-trait); border-radius: 0 0 var(--rayon-petit) var(--rayon-petit); margin-top: var(--espace-1); }
+
+.recap-equipe, .recap-groupe, .recap-genres { min-width: 0; }
+.dialogue-detail { overflow-x: hidden; }

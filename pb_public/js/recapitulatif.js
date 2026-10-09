@@ -144,12 +144,21 @@ function creerRecapitulatif(d) {
   ];
   tuiles.forEach((t, i) => { if (i === 2 || i === 5) t.classList.add("recap-tuile-texte"); }); // studio et pays : du texte, pas un chiffre
 
+  // Chaque personne n'apparaît qu'une fois, dans le premier groupe où elle se trouve
+  // (réalisateur, puis producteur, puis acteur) : un réalisateur qui produit aussi son film n'est pas répété.
+  const dejaMontres = new Set();
+  const sansDoublon = (liste) => liste.filter((p) => !dejaMontres.has(p.nom) && dejaMontres.add(p.nom));
+  const realisateurs = sansDoublon(film ? d.realisateurs || [] : d.createurs || []);
+  const producteurs = sansDoublon(d.producteurs || []);
   const acteurs = d.acteurs || [];
+  const vedette = acteurs.length && !dejaMontres.has(acteurs[0].nom) ? sansDoublon([acteurs[0]]) : []; // pas de promotion d'un second rôle
+  if (acteurs.length) dejaMontres.add(acteurs[0].nom);
+  const distribution = sansDoublon(acteurs.slice(1));
   const equipe = [
-    creerGroupePersonnes(film ? "Réalisateur" : "Créé par", film ? d.realisateurs || [] : d.createurs || [], false),
-    creerGroupePersonnes(film ? "Producteur" : "Producteur exécutif", d.producteurs || [], false),
-    creerGroupePersonnes("Acteur principal", acteurs.slice(0, 1), true),
-    creerGroupePersonnes("Distribution", acteurs.slice(1), true),
+    creerGroupePersonnes(film ? "Réalisateur" : "Créé par", realisateurs, false),
+    creerGroupePersonnes(film ? "Producteur" : "Producteur exécutif", producteurs, false),
+    creerGroupePersonnes("Acteur principal", vedette, true),
+    creerGroupePersonnes("Distribution", distribution, true),
   ].filter((g) => g);
 
   return el("div", { class: "recap" },

@@ -229,6 +229,71 @@ const PAGES = [
   { nom: "Sauvegarde", url: "sauvegarde.html", dispo: true },
 ];
 
+// Suggestions qui apparaissent pendant qu'on tape dans la barre de recherche : les titres dont le nom
+// ressemble à ce qu'on a écrit (ex. « game » → Game of Thrones, The Game...). Un clic sur une suggestion
+// ouvre directement la fiche de ce titre dans le catalogue ; « Entrée » lance la recherche complète.
+function activerSuggestions(formulaire) {
+  const champ = formulaire.querySelector("input");
+  const liste = el("ul", { class: "suggestions", role: "listbox", id: "liste-suggestions", hidden: true });
+  champ.setAttribute("role", "combobox");
+  champ.setAttribute("aria-autocomplete", "list");
+  champ.setAttribute("aria-controls", "liste-suggestions");
+  champ.setAttribute("aria-expanded", "false");
+  champ.setAttribute("autocomplete", "off");
+  formulaire.append(liste);
+
+  let minuteur = null;
+  let numeroDemande = 0; // pour ignorer une réponse arrivée trop tard
+  let indexActif = -1;
+
+  const fermer = () => { liste.hidden = true; champ.setAttribute("aria-expanded", "false"); indexActif = -1; };
+  const surligner = (index) => {
+    [...liste.children].forEach((li, i) => { li.classList.toggle("active", i === index); li.setAttribute("aria-selected", String(i === index)); });
+    indexActif = index;
+  };
+  const dessiner = (texte, resultats) => {
+    const lignes = resultats.map((r) => {
+      const adresse = urlAffiche(r.affiche, "w92");
+      const li = el("li", { role: "option", class: "suggestion", "aria-selected": "false" },
+        adresse ? el("img", { class: "suggestion-affiche", src: adresse, alt: "" }) : el("span", { class: "suggestion-affiche suggestion-vide" }),
+        el("span", { class: "suggestion-texte" }, el("strong", {}, r.titre),
+          el("span", { class: "discret" }, [r.format === "film" ? "Film" : "Série", r.annee].filter(Boolean).join(" · "))));
+      li.addEventListener("mousedown", (e) => { e.preventDefault(); location.href = `catalogue.html?q=${encodeURIComponent(r.titre)}&ouvrir=${r.format}:${r.id_source}`; });
+      return li;
+    });
+    const tous = el("li", { role: "option", class: "suggestion suggestion-tous", "aria-selected": "false" }, icone("search"), `Voir tous les résultats pour « ${texte} »`);
+    tous.addEventListener("mousedown", (e) => { e.preventDefault(); location.href = `catalogue.html?q=${encodeURIComponent(texte)}`; });
+    liste.replaceChildren(...lignes, tous);
+    liste.hidden = false;
+    champ.setAttribute("aria-expanded", "true");
+    indexActif = -1;
+  };
+
+  champ.addEventListener("input", () => {
+    clearTimeout(minuteur);
+    const texte = champ.value.trim();
+    if (texte.length < 2) { fermer(); return; }
+    minuteur = setTimeout(async () => {
+      const numero = ++numeroDemande;
+      try {
+        const page = await source(`rechercher?q=${encodeURIComponent(texte)}`);
+        if (numero !== numeroDemande || champ.value.trim() !== texte) return; // on a continué à taper entre-temps
+        if (page.resultats.length) dessiner(texte, page.resultats.slice(0, 8)); else fermer();
+      } catch (erreur) { fermer(); }
+    }, 250);
+  });
+  champ.addEventListener("keydown", (e) => {
+    const lignes = [...liste.children];
+    if (liste.hidden || !lignes.length) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); surligner((indexActif + 1) % lignes.length); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); surligner((indexActif - 1 + lignes.length) % lignes.length); }
+    else if (e.key === "Enter" && indexActif >= 0) { e.preventDefault(); lignes[indexActif].dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true })); }
+    else if (e.key === "Escape") fermer();
+  });
+  champ.addEventListener("blur", fermer);
+  champ.addEventListener("focus", () => { if (liste.children.length && champ.value.trim().length >= 2) liste.hidden = false; });
+}
+
 function construireEntete() {
   const pageCourante = location.pathname.split("/").pop() || "index.html";
   const liens = PAGES.map((page) => {
@@ -239,6 +304,7 @@ function construireEntete() {
   const recherche = el("form", { class: "recherche", action: "catalogue.html", method: "get" },
     el("input", { type: "search", name: "q", value: q, placeholder: "Rechercher un film ou une série…", "aria-label": "Rechercher" }),
     el("button", { type: "submit" }, icone("search"), "Rechercher"));
+  activerSuggestions(recherche);
   return el("header", { class: "entete" },
     el("div", { class: "entete-contenu" },
       el("a", { href: "index.html", class: "logo" }, icone("film"), "Suivi Films & Séries"),
