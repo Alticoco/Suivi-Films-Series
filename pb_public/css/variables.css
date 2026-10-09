@@ -27,6 +27,9 @@
   --couleur-menthe: #3ad9a8;
   --couleur-menthe-douce: rgba(58, 217, 168, 0.12);
   --couleur-menthe-forte: rgba(58, 217, 168, 0.22); /* fond d'une puce de filtre incluse */
+  /* Onglets (menu du haut, catégories du catalogue, filtre de recherche) : rouge « fauteuil de cinéma » */
+  --couleur-onglet: #c8102e;
+  --couleur-onglet-doux: rgba(200, 16, 46, 0.16);
   --couleur-erreur: #f87171;        /* erreurs de saisie, actions destructrices, filtres exclus */
   --couleur-erreur-douce: rgba(248, 113, 113, 0.14);
 

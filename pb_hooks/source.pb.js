@@ -6,7 +6,7 @@
 //   GET /api/source/rechercher?q=texte&page=1   (+ filtres facultatifs : type, genres_*, pays_*, annee_*)
 //   GET /api/source/decouvrir?categorie=tendances&page=1   (se balader dans le catalogue)
 //   GET /api/source/explorer?type=…&genres_inclus=…&pays_exclus=…  (parcourir avec des filtres)
-//   GET /api/source/personnes?q=nom   (acteurs, réalisateurs...) ; explorer accepte personne_id + personne_role
+//   GET /api/source/personnes?q=nom   (acteurs, réalisateurs... ; &metier= pour filtrer) ; explorer accepte personne_id + personne_role
 //   GET /api/source/saga/{id}   (les films d'une saga : Avatar 1, 2, 3…)
 //   GET /api/source/filtres, GET /api/source/pays?ids=film:603,…
 //   GET /api/source/details/{format}/{id}      format = film | serie
@@ -64,8 +64,9 @@ routerAdd("GET", "/api/source/explorer", (e) => {
 // Chercher une personne : GET /api/source/personnes?q=keanu
 routerAdd("GET", "/api/source/personnes", (e) => {
   const texte = (e.request.url.query().get("q") || "").trim();
+  const metier = e.request.url.query().get("metier") || ""; // facultatif : acteur, realisateur ou producteur
   if (!texte) return e.json(400, { message: "Paramètre q manquant" });
-  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.personnes(texte));
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.personnes(texte, metier));
 });
 
 // Les films d'une saga : GET /api/source/saga/{idCollection}

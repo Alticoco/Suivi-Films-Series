@@ -406,32 +406,39 @@ function explorer(p) {
 }
 
 // ---------- Rechercher par acteur ou réalisateur ----------
-// personnes(texte) → les personnes qui portent ce nom (pour choisir la bonne)
-function personnes(texte) {
+// personnes(texte, metier) → les personnes qui portent ce nom (pour choisir la bonne).
+// metier (facultatif) : "acteur", "realisateur" ou "producteur" → les personnes de ce métier passent en premier
+// (on ne retire pas les autres : TMDB range Steven Spielberg dans « Réalisation », alors qu'il produit aussi).
+const METIERS_TMDB = { Acting: "acteur", Directing: "realisateur", Production: "producteur" };
+function personnes(texte, metier) {
   const d = appeler("/search/person", { query: texte, language: "fr-FR", include_adult: "false", page: 1 });
-  return ((d && d.results) || []).slice(0, 8).map((p) => ({
+  return ((d && d.results) || []).map((p) => ({
     id: String(p.id),
     nom: p.name || "",
     photo: p.profile_path || null,
-    metier: p.known_for_department === "Directing" ? "realisateur" : p.known_for_department === "Acting" ? "acteur" : "autre",
+    metier: METIERS_TMDB[p.known_for_department] || "autre",
     connu_pour: (p.known_for || []).slice(0, 3).map((k) => k.title || k.name).filter((x) => x),
-  }));
+  })).map((p, i) => ({ p: p, i: i })).sort((x, y) => ((y.p.metier === metier ? 1 : 0) - (x.p.metier === metier ? 1 : 0)) || x.i - y.i)
+    .map((x) => x.p).slice(0, 8);
 }
 
 // Genres de type « émission » (talk-show, info, télé-réalité) : on n'y compte pas une apparition comme un rôle
 const GENRES_EMISSIONS = [10767, 10763, 10764];
 
 // filmographie(parametres) → une page de titres d'une personne, avec les mêmes filtres que explorer()
-// parametres : personne_id, personne_role (acteur | realisateur), type, genres_inclus / genres_exclus,
+// parametres : personne_id, personne_role (acteur | realisateur | producteur), type, genres_inclus / genres_exclus,
 // annee_min, annee_max, tri, page.
 //  - acteur : rôles principaux (les 5 premiers du casting d'un film ; au moins 5 épisodes pour une série)
 //  - réalisateur : titres qu'il a réalisés
+//  - producteur : titres qu'il a produits (producteur, producteur exécutif)
 function filmographie(p) {
   const id = String(p.personne_id || "");
   if (!/^[0-9]+$/.test(id)) throw new Error("Identifiant de personne invalide");
   const d = appeler(`/person/${id}/combined_credits`, { language: "fr-FR" });
-  const acteur = p.personne_role !== "realisateur";
-  const brut = !d ? [] : acteur
+  const acteur = p.personne_role !== "realisateur" && p.personne_role !== "producteur";
+  const brut = !d ? [] : p.personne_role === "producteur"
+    ? (d.crew || []).filter((c) => c.job === "Producer" || c.job === "Executive Producer")
+    : acteur
     ? (d.cast || []).filter((c) => {
       if (/\b(self|himself|herself|soi-m)/i.test(c.character || "")) return false;       // apparition « en tant que soi-même »
       if (c.media_type === "movie") return c.order !== undefined && c.order < 5;
