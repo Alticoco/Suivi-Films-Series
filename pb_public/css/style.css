@@ -140,6 +140,37 @@ button.danger {
   font-weight: 600;
 }
 
+/* ---------- Tableau de bord et statistiques ---------- */
+.tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--espace-moyen); margin-bottom: var(--espace-grand); }
+.tuile {
+  background: var(--couleur-fond-carte); border: 1px solid var(--couleur-bordure); border-radius: var(--rayon);
+  padding: var(--espace-moyen); display: flex; flex-direction: column; gap: 0.25rem;
+}
+.tuile-valeur { font-size: 1.75rem; font-weight: 700; color: var(--couleur-accent); }
+.tuile-lien { text-decoration: none; }
+.tuile-lien:hover { border-color: var(--couleur-accent); }
+.deux-colonnes { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: var(--espace-grand); }
+h2 { font-size: 1.25rem; }
+.dernier, .serie-en-cours {
+  display: flex; gap: var(--espace-moyen); align-items: center;
+  background: var(--couleur-fond-carte); border: 1px solid var(--couleur-bordure); border-radius: var(--rayon);
+  padding: var(--espace-petit); color: inherit; text-decoration: none;
+}
+.dernier:hover { border-color: var(--couleur-accent); }
+.dernier p, .serie-infos p { margin: 0; }
+.vignette { width: 4rem; aspect-ratio: 2 / 3; object-fit: cover; border-radius: calc(var(--rayon) / 2); background: var(--couleur-fond); flex-shrink: 0; }
+.vignette-vide { display: flex; align-items: center; justify-content: center; color: var(--couleur-texte-discret); }
+.liste-series { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--espace-petit); }
+.serie-infos { flex: 1; min-width: 0; }
+.serie-infos a { color: var(--couleur-texte); text-decoration: none; }
+.action-suivant button { white-space: nowrap; }
+.etat-technique { margin: var(--espace-grand) 0; }
+.annees { display: flex; flex-direction: column; gap: var(--espace-petit); margin-bottom: var(--espace-grand); }
+.ligne-annee { display: grid; grid-template-columns: 3.5rem 1fr; gap: 0.25rem var(--espace-moyen); align-items: center; }
+.ligne-annee .discret { grid-column: 2; }
+.barre { background: var(--couleur-fond-carte); border-radius: var(--rayon); height: 0.9rem; overflow: hidden; }
+.barre-remplie { background: var(--couleur-accent); height: 100%; border-radius: var(--rayon); }
+
 /* ---------- Bibliothèque ---------- */
 .filtres { display: flex; flex-wrap: wrap; gap: var(--espace-moyen); }
 .filtres .champ { margin-bottom: 0; }

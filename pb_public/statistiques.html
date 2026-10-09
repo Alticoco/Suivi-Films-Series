@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Statistiques — Suivi Films &amp; Séries</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Statistiques</h1>
+    <p id="message" class="discret">Chargement…</p>
+
+    <div id="contenu" hidden>
+      <section class="tuiles" aria-label="Temps passé">
+        <div class="tuile"><span class="tuile-valeur" id="temps-total"></span><span class="discret">temps total passé</span></div>
+        <div class="tuile"><span class="tuile-valeur" id="temps-films"></span><span class="discret">devant des films</span></div>
+        <div class="tuile"><span class="tuile-valeur" id="temps-episodes"></span><span class="discret">devant des épisodes</span></div>
+      </section>
+
+      <h2>Titres vus</h2>
+      <section class="tuiles" aria-label="Titres vus">
+        <div class="tuile"><span class="tuile-valeur" id="vus-film"></span><span class="discret">films</span></div>
+        <div class="tuile"><span class="tuile-valeur" id="vus-serie"></span><span class="discret">séries</span></div>
+        <div class="tuile"><span class="tuile-valeur" id="vus-anime"></span><span class="discret">animés</span></div>
+      </section>
+
+      <h2>Visionnages par année</h2>
+      <div id="annees" class="annees"></div>
+
+      <p class="discret">Les titres « vus avant » (sans date) comptent dans les titres vus, mais pas dans le temps passé ni dans les années. Le temps d'un épisode est sa durée connue, sinon la durée habituelle d'un épisode de la série.</p>
+    </div>
+  </main>
+
+  <script src="js/commun.js"></script>
+  <script src="js/statistiques.js"></script>
+</body>
+</html>

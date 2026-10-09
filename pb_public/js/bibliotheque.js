@@ -118,9 +118,7 @@ function trier(liste, f) {
 
 // ---------- Affichage ----------
 function adresseImage(ligne) {
-  const t = ligne.titre;
-  if (t.image_perso) return `/api/files/titres/${t.id}/${encodeURIComponent(t.image_perso)}`;
-  return urlAffiche(ligne.affiche, "w185");
+  return urlImageTitre(ligne.titre, ligne.affiche, "w185");
 }
 
 function creerCarte(ligne) {

@@ -17,16 +17,8 @@ function retourBibliotheque(evenement) {
   }
 }
 
-// Un film (TMDB), ou un titre manuel de type film. Un animé « film » compte aussi.
-function estFilm(t) {
-  return t.source === "tmdb" ? t.format_source === "film" : t.type === "film";
-}
-
 // Image à afficher : la mienne si j'en ai mis une, sinon l'affiche TMDB (taille moyenne).
-function adresseImage(t, affiche) {
-  if (t.image_perso) return `/api/files/titres/${t.id}/${encodeURIComponent(t.image_perso)}`;
-  return urlAffiche(affiche, "w342");
-}
+const adresseImage = (t, affiche) => urlImageTitre(t, affiche, "w342");
 
 async function charger() {
   if (!/^[a-z0-9]+$/.test(idTitre)) {

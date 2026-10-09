@@ -1,6 +1,6 @@
 // Partie « série / animé » de la fiche : saisons dépliables, épisodes à cocher,
 // « toute la saison », progression, statuts automatiques, note de la série.
-// (Dépend de commun.js, formulaires.js et des variables de fiche.js : titre, visionnages, modifierTitre)
+// (Dépend de commun.js, formulaires.js, serie.js et des variables de fiche.js : titre, visionnages, modifierTitre)
 //
 // Rappel des données : un épisode coché = une ligne « visionnages » (saison, episode, date).
 // La saison 0 = les épisodes spéciaux : on peut les cocher, mais ils ne comptent pas
@@ -8,42 +8,13 @@
 
 let saisonsSerie = null;           // [{numero, nom, nb_episodes, episodes: [...]}]
 const saisonsOuvertes = new Set(); // numéros des saisons dépliées
-const cleEpisode = (saison, episode) => `${saison}:${episode}`;
-
-// Un épisode est « diffusé » si sa date est connue et passée.
-const estDiffuse = (episode) => !!episode.date_diffusion && episode.date_diffusion <= dateDuJour();
-
-function episodesVus() {
-  return new Map(visionnages.filter((v) => v.episode > 0).map((v) => [cleEpisode(v.saison, v.episode), v]));
-}
-
-// Compte tout ce dont on a besoin pour la progression et les statuts.
-function calculerProgression() {
-  const vus = episodesVus();
-  let diffuses = 0;
-  let diffusesVus = 0;
-  let prochain = null; // premier épisode diffusé, hors spéciaux, pas encore vu
-  for (const saison of saisonsSerie) {
-    if (saison.numero === 0) continue;
-    for (const episode of saison.episodes) {
-      if (!estDiffuse(episode)) continue;
-      diffuses++;
-      if (vus.has(cleEpisode(saison.numero, episode.numero))) diffusesVus++;
-      else if (!prochain) prochain = { saison: saison.numero, episode: episode.numero, nom: episode.nom };
-    }
-  }
-  // Dernier épisode vu (hors spéciaux) : la plus grande saison, puis le plus grand épisode
-  let dernier = null;
-  for (const v of vus.values()) {
-    if (v.saison === 0) continue;
-    if (!dernier || v.saison > dernier.saison || (v.saison === dernier.saison && v.episode > dernier.episode)) dernier = v;
-  }
-  return { vus, total: vus.size, diffuses, diffusesVus, prochain, dernier, complet: diffuses > 0 && diffusesVus === diffuses };
-}
+// (La logique de calcul — cleEpisode, estDiffuse, calculerProgression... — est dans serie.js)
+const episodesVus = () => episodesVusDe(visionnages);
+const progressionActuelle = () => calculerProgression(saisonsSerie, visionnages);
 
 // ---------- Statuts automatiques (cahier des charges, section 6) ----------
 async function appliquerStatutAuto(coche) {
-  const p = calculerProgression();
+  const p = progressionActuelle();
   let statut = titre.statut;
   if (coche) {
     // Cocher un épisode : en cours, ou terminé si tous les épisodes diffusés sont vus
@@ -166,17 +137,7 @@ function sectionSerie() {
 
 async function chargerEpisodes() {
   try {
-    const details = await source(`details/serie/${titre.id_source}`);
-    saisonsSerie = details.saisons.map((s) => Object.assign({}, s, { episodes: [] }));
-    // On charge les saisons 4 par 4 (le serveur garde tout en cache ensuite)
-    const file = [...saisonsSerie];
-    const ouvrier = async () => {
-      while (file.length) {
-        const saison = file.shift();
-        saison.episodes = (await source(`episodes/${titre.id_source}/${saison.numero}`)) || [];
-      }
-    };
-    await Promise.all([ouvrier(), ouvrier(), ouvrier(), ouvrier()]);
+    saisonsSerie = await chargerSaisons(titre.id_source);
   } catch (erreur) {
     const bloc = document.getElementById("chargement-episodes");
     if (bloc) { bloc.className = "ko"; bloc.textContent = `Épisodes indisponibles : ${erreur.message}`; }
@@ -184,7 +145,7 @@ async function chargerEpisodes() {
   }
 
   // Une nouvelle saison (ou un nouvel épisode) est sortie : la série terminée repasse « en cours »
-  const p = calculerProgression();
+  const p = progressionActuelle();
   if (titre.statut === "termine" && visionnages.length && !p.complet) {
     try {
       await appliquerStatutAuto(false);
@@ -200,7 +161,7 @@ async function chargerEpisodes() {
 function dessinerSerie() {
   const section = document.getElementById("section-serie");
   if (!section || !saisonsSerie) return;
-  const p = calculerProgression();
+  const p = progressionActuelle();
 
   const resume = [];
   if (p.dernier) resume.push(`Progression : S${p.dernier.saison}E${p.dernier.episode}`);

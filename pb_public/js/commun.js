@@ -99,6 +99,17 @@ function urlAffiche(chemin, taille) {
   return chemin ? `https://image.tmdb.org/t/p/${taille || "w185"}${chemin}` : null;
 }
 
+// Image d'un de mes titres : la mienne si j'en ai mis une, sinon l'affiche TMDB (ou null).
+function urlImageTitre(titre, affiche, taille) {
+  if (titre.image_perso) return `/api/files/titres/${titre.id}/${encodeURIComponent(titre.image_perso)}`;
+  return urlAffiche(affiche, taille);
+}
+
+// Un film (TMDB), ou un titre manuel de type film. Un animé « film » compte aussi.
+function estFilm(titre) {
+  return titre.source === "tmdb" ? titre.format_source === "film" : titre.type === "film";
+}
+
 // Date du jour au format AAAA-MM-JJ (heure locale)
 function dateDuJour() {
   const d = new Date();
@@ -142,6 +153,17 @@ function dureeEntre(debut, fin) {
   return morceaux.length ? morceaux.join(" et ") : "le même jour";
 }
 
+// Statistiques calculées par le serveur. Si des durées manquent (titres pas encore en cache),
+// on les fait charger par la source (le serveur les mémorise), puis on redemande les chiffres.
+async function chargerStatistiques() {
+  let stats = await requete("/api/perso/statistiques");
+  if (stats.manquants.length) {
+    await Promise.all(stats.manquants.map((m) => source(`details/${m.format}/${m.id_source}`).catch(() => null)));
+    stats = await requete("/api/perso/statistiques");
+  }
+  return stats;
+}
+
 // ---------- Messages éphémères ----------
 function toast(texte, erreur) {
   const message = el("div", { class: "toast" + (erreur ? " toast-erreur" : "") }, texte);
@@ -155,7 +177,7 @@ const PAGES = [
   { nom: "Catalogue", url: "catalogue.html", dispo: true },
   { nom: "Ma bibliothèque", url: "bibliotheque.html", dispo: true },
   { nom: "Journal", url: "journal.html", dispo: false },
-  { nom: "Statistiques", url: "statistiques.html", dispo: false },
+  { nom: "Statistiques", url: "statistiques.html", dispo: true },
   { nom: "Sauvegarde", url: "sauvegarde.html", dispo: false },
 ];
 
