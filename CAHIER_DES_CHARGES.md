@@ -55,6 +55,7 @@ Le reste du code ne connaît pas TMDB. Plus tard, on pourra ajouter TVmaze, AniL
 |---|---|---|
 | `source` | texte | `tmdb` ou `manuel` |
 | `id_source` | texte | vide si manuel |
+| `format_source` | choix | `film` ou `serie` côté TMDB (un film et une série peuvent avoir le même numéro ; un animé peut être l'un ou l'autre). Vide si manuel |
 | `type` | choix | `film`, `serie`, `anime` |
 | `titre` | texte | titre français au moment de l'ajout (sert de repère dans l'export) |
 | `annee` | nombre | année de sortie |
@@ -76,6 +77,7 @@ Le reste du code ne connaît pas TMDB. Plus tard, on pourra ajouter TVmaze, AniL
 | `note` | nombre 0–10 | films uniquement, facultatif |
 | `commentaire` | texte | films uniquement, facultatif |
 
+- Convention technique : PocketBase stocke un nombre vide comme `0`. Pour un film, `saison` et `episode` valent donc `0` ; un épisode a toujours `episode` ≥ 1 (la saison `0` correspond aux épisodes spéciaux).
 - **Film** : une ligne par visionnage. Revoir un film = une nouvelle ligne avec une nouvelle date (historique des revisionnages, temps écoulé entre deux visionnages affiché sur la fiche).
 - **Série / animé** : une ligne par épisode coché. « Toute la saison » crée une ligne par épisode, avec la même date.
 - V1 : un épisode ne peut être coché qu'une fois (pas de revisionnage de série).
@@ -134,7 +136,7 @@ En-tête commun : navigation + barre de recherche. Pied de page : logo et mentio
 - **Feuille « Historique »** : une ligne par visionnage — Titre, Année, Type, Date (jj/mm/aaaa), Saison, Épisode, Note, Commentaire, Statut actuel du titre.
 - **Feuille « Mes titres »** : une ligne par titre — Titre, Année, Type, Statut, Vu avant, Note série, Notes.
 - Les titres « vu avant » apparaissent dans l'historique avec « Vu avant » à la place de la date.
-- Une seule colonne technique, **en dernier** : `Identifiant` (ex. `tmdb:1399` ou `manuel:xxxx`), indispensable pour l'import.
+- Une seule colonne technique, **en dernier** : `Identifiant` (ex. `tmdb:serie:1399`, `tmdb:film:603` ou `manuel:xxxx`), indispensable pour l'import.
 - Nom du fichier : `suivi-films-series_AAAA-MM-JJ.xlsx`.
 
 ### Import
