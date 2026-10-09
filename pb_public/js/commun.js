@@ -176,7 +176,7 @@ const PAGES = [
   { nom: "Accueil", url: "index.html", dispo: true },
   { nom: "Catalogue", url: "catalogue.html", dispo: true },
   { nom: "Ma bibliothèque", url: "bibliotheque.html", dispo: true },
-  { nom: "Journal", url: "journal.html", dispo: false },
+  { nom: "Journal", url: "journal.html", dispo: true },
   { nom: "Statistiques", url: "statistiques.html", dispo: true },
   { nom: "Sauvegarde", url: "sauvegarde.html", dispo: false },
 ];

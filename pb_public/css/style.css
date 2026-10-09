@@ -171,6 +171,20 @@ h2 { font-size: 1.25rem; }
 .barre { background: var(--couleur-fond-carte); border-radius: var(--rayon); height: 0.9rem; overflow: hidden; }
 .barre-remplie { background: var(--couleur-accent); height: 100%; border-radius: var(--rayon); }
 
+/* ---------- Journal ---------- */
+.mois h2 { margin: var(--espace-grand) 0 var(--espace-petit); text-transform: capitalize; }
+.mois h2 .discret { text-transform: none; font-weight: 400; }
+.liste-journal { list-style: none; margin: 0; padding: 0; }
+.ligne-journal {
+  display: grid; grid-template-columns: 4.5rem 3rem 1fr; gap: var(--espace-moyen); align-items: center;
+  padding: var(--espace-petit) 0; border-top: 1px solid var(--couleur-bordure);
+}
+.ligne-journal .vignette { width: 3rem; }
+.ligne-journal .jour { color: var(--couleur-texte-discret); font-size: var(--taille-petit); }
+.journal-contenu p { margin: 0; }
+.journal-contenu a { color: var(--couleur-texte); text-decoration: none; }
+.journal-contenu a:hover { color: var(--couleur-accent); }
+
 /* ---------- Bibliothèque ---------- */
 .filtres { display: flex; flex-wrap: wrap; gap: var(--espace-moyen); }
 .filtres .champ { margin-bottom: 0; }
