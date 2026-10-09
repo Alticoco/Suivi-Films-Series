@@ -200,8 +200,11 @@ function construireEntete() {
 
 function construirePied() {
   return el("footer", { class: "pied" },
+    el("img", { class: "logo-tmdb", src: "img/tmdb-logo.svg", alt: "The Movie Database (TMDB)", loading: "lazy" }),
     el("p", { class: "discret" }, "This product uses the TMDB API but is not endorsed or certified by TMDB."));
 }
 
+// Icône de l'onglet (la même sur toutes les pages)
+document.head.append(el("link", { rel: "icon", type: "image/svg+xml", href: "img/favicon.svg" }));
 document.body.prepend(construireEntete());
 document.body.append(construirePied());

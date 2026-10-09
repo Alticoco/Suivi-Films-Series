@@ -58,14 +58,19 @@ h1 { font-size: var(--taille-titre); margin-top: 0; }
 .entete nav a { color: var(--couleur-texte-discret); text-decoration: none; }
 .entete nav a:hover, .entete nav a.nav-actif { color: var(--couleur-accent); }
 .nav-bientot { color: var(--couleur-bordure); cursor: default; }
-.recherche { display: flex; gap: var(--espace-petit); }
-.recherche input { width: 16rem; max-width: 100%; }
+.recherche { display: flex; gap: var(--espace-petit); flex: 1 1 18rem; max-width: 28rem; }
+.recherche input { flex: 1; min-width: 0; }
 
 .pied {
   text-align: center;
   padding: var(--espace-moyen);
   border-top: 1px solid var(--couleur-bordure);
 }
+.pied p { margin: var(--espace-petit) 0 0; }
+.logo-tmdb { height: var(--hauteur-logo-tmdb); width: auto; }
+
+/* Accessibilité : un contour bien visible au clavier */
+:focus-visible { outline: 2px solid var(--couleur-accent); outline-offset: 2px; }
 
 /* ---------- Champs et boutons ---------- */
 input, select, textarea {
