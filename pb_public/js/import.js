@@ -116,19 +116,20 @@ async function lireFichierImport(fichier) {
     if (vuAvant && episode === 0) { titre.vu_avant = true; return; }
     const date = vuAvant ? "" : lireDate(ligne["Date"]);
     if (!vuAvant && !date) return erreurs.push(`« ${FEUILLE_HISTORIQUE} », ligne ${numero} : date illisible (« ${texte(ligne["Date"])} »).`);
+    const passage = Math.max(1, nombre(ligne["Passage"]) || 1); // colonne absente des anciens exports : première fois
     if (episode > 0) {
-      const cle = `${identifiant}|${saison}|${episode}`;
+      const cle = `${identifiant}|${saison}|${episode}|${passage}`;
       if (episodesVus.has(cle)) return erreurs.push(`« ${FEUILLE_HISTORIQUE} », ligne ${numero} : épisode S${saison}E${episode} en double pour « ${titre.titre} ».`);
       episodesVus.add(cle);
     }
-    visionnages.push({ identifiant, date, avant: vuAvant, saison, episode, note: nombre(ligne["Note"]), commentaire: texte(ligne["Commentaire"]) });
+    visionnages.push({ identifiant, date, avant: vuAvant, saison, episode, passage, note: nombre(ligne["Note"]), commentaire: texte(ligne["Commentaire"]) });
   });
 
   return { titres: [...titres.values()], visionnages, erreurs };
 }
 
 // ---------- 2. Aperçu : « X titres, Y visionnages » ----------
-const cleVisionnage = (date, saison, episode) => `${date}|${saison}|${episode}`;
+const cleVisionnage = (date, saison, episode, passage) => `${date}|${saison}|${episode}|${passage > 1 ? passage : 1}`;
 
 async function apercuImport(donnees) {
   const [titresExistants, visionnagesExistants] = await Promise.all([pbListe("titres"), pbListe("visionnages")]);
@@ -140,12 +141,12 @@ async function apercuImport(donnees) {
   for (const v of visionnagesExistants) {
     const t = titresExistants.find((x) => x.id === v.titre);
     if (!t) continue;
-    const cle = `${identifiantTitre(t)}|${cleVisionnage(String(v.date).slice(0, 10), v.saison, v.episode)}`;
+    const cle = `${identifiantTitre(t)}|${cleVisionnage(String(v.date).slice(0, 10), v.saison, v.episode, v.passage)}`;
     dejaLa.set(cle, (dejaLa.get(cle) || 0) + 1);
   }
   let nouveauxVisionnages = 0;
   for (const v of donnees.visionnages) {
-    const cle = `${v.identifiant}|${cleVisionnage(v.date, v.saison, v.episode)}`;
+    const cle = `${v.identifiant}|${cleVisionnage(v.date, v.saison, v.episode, v.passage)}`;
     if (dejaLa.get(cle) > 0) dejaLa.set(cle, dejaLa.get(cle) - 1);
     else nouveauxVisionnages++;
   }
@@ -199,20 +200,20 @@ async function appliquerImport(donnees, mode, progression) {
   if (mode === "fusionner") {
     const parId = new Map(existants.map((t) => [t.id, identifiantTitre(t)]));
     for (const v of await pbListe("visionnages")) {
-      const cle = `${parId.get(v.titre)}|${cleVisionnage(String(v.date).slice(0, 10), v.saison, v.episode)}`;
+      const cle = `${parId.get(v.titre)}|${cleVisionnage(String(v.date).slice(0, 10), v.saison, v.episode, v.passage)}`;
       dejaLa.set(cle, (dejaLa.get(cle) || 0) + 1);
     }
   }
   const aCreer = [];
   for (const v of donnees.visionnages) {
-    const cle = `${v.identifiant}|${cleVisionnage(v.date, v.saison, v.episode)}`;
+    const cle = `${v.identifiant}|${cleVisionnage(v.date, v.saison, v.episode, v.passage)}`;
     if (dejaLa.get(cle) > 0) dejaLa.set(cle, dejaLa.get(cle) - 1);
     else aCreer.push(v);
   }
   await enParallele(aCreer, (v) => pbCreer("visionnages", {
     titre: idBase.get(v.identifiant),
     ...(v.avant ? { avant: true } : { date: `${v.date} 00:00:00.000Z` }),
-    saison: v.saison, episode: v.episode, note: v.note, commentaire: v.commentaire,
+    saison: v.saison, episode: v.episode, ...(v.passage > 1 ? { passage: v.passage } : {}), note: v.note, commentaire: v.commentaire,
   }), (f, n) => progression("Création des visionnages", f, n));
   bilan.visionnagesAjoutes = aCreer.length;
   return bilan;

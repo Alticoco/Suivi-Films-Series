@@ -159,7 +159,7 @@ function pays(ids) {
 
 // format : "film" ou "serie"
 function details(format, idSource) {
-  return avecCache(idSource, `details_${format}`, () => fournisseur.details(format, idSource), 3);
+  return avecCache(idSource, `details_${format}`, () => fournisseur.details(format, idSource), 4);
 }
 
 function saisons(idSource) {

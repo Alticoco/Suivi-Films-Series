@@ -163,7 +163,7 @@ function majLigneSerie(elements, titre, saisons, siens) {
   bouton.addEventListener("click", async () => {
     bouton.disabled = true;
     try {
-      const nouvelle = await cocherEpisodeSerie(titre.id, p.prochain.saison, p.prochain.episode);
+      const nouvelle = await cocherEpisodeSerie(titre.id, p.prochain.saison, p.prochain.episode, undefined, false, passageActuelDe(siens));
       siens.push(nouvelle);
       const apres = calculerProgression(saisons, siens);
       const statut = apres.complet ? "termine" : "en_cours";

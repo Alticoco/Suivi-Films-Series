@@ -173,11 +173,12 @@ function decouvrir(categorie, page) {
 }
 
 // Version du format de "details" : un titre déjà en cache avec un format plus ancien est rechargé.
-// (v2 : distribution, réalisateur, studio, box-office, pays, classification ; v3 : saga / collection)
-const VERSION_DETAILS = 3;
+// (v2 : distribution, réalisateur, studio, box-office, pays, classification ; v3 : saga / collection ;
+//  v4 : identifiant des personnes, pour ouvrir leur filmographie)
+const VERSION_DETAILS = 4;
 
 function personne(p) {
-  return { nom: p.name || "", photo: p.profile_path || null };
+  return { id: String(p.id || ""), nom: p.name || "", photo: p.profile_path || null };
 }
 
 // Sans doublon : une même personne peut avoir plusieurs métiers (ex. réalisateur et producteur)
@@ -267,7 +268,7 @@ function details(format, idSource) {
     realisateurs: films ? premiers(equipe.filter((c) => c.job === "Director"), 3) : [],
     createurs: films ? [] : (d.created_by || []).slice(0, 3).map(personne),
     producteurs: premiers(equipe.filter((c) => c.job === (films ? "Producer" : "Executive Producer")), 3),
-    acteurs: (credits.cast || []).slice(0, 6).map((c) => ({ nom: c.name || "", photo: c.profile_path || null, role: c.character || "" })),
+    acteurs: (credits.cast || []).slice(0, 6).map((c) => ({ id: String(c.id || ""), nom: c.name || "", photo: c.profile_path || null, role: c.character || "" })),
     // Spécifique aux séries (vide pour un film)
     statut_diffusion: films ? null : d.status || null,
     saisons: films ? [] : (d.seasons || []).map((s) => ({
@@ -429,7 +430,7 @@ const GENRES_EMISSIONS = [10767, 10763, 10764];
 // parametres : personne_id, personne_role (acteur | realisateur | producteur), type, genres_inclus / genres_exclus,
 // annee_min, annee_max, tri, page.
 //  - acteur : rôles principaux (les 5 premiers du casting d'un film ; au moins 5 épisodes pour une série)
-//  - réalisateur : titres qu'il a réalisés
+//  - réalisateur : titres qu'il a réalisés ou créés (séries)
 //  - producteur : titres qu'il a produits (producteur, producteur exécutif)
 function filmographie(p) {
   const id = String(p.personne_id || "");
@@ -444,7 +445,7 @@ function filmographie(p) {
       if (c.media_type === "movie") return c.order !== undefined && c.order < 5;
       return (c.episode_count || 0) >= 5 && !(c.genre_ids || []).some((g) => GENRES_EMISSIONS.indexOf(g) !== -1);
     })
-    : (d.crew || []).filter((c) => c.job === "Director");
+    : (d.crew || []).filter((c) => c.job === "Director" || c.job === "Creator");
 
   const vus = {};
   const aujourdhui = new Date().toISOString().slice(0, 10);
