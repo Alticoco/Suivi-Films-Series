@@ -412,6 +412,12 @@ function pageExplorer(format, p) {
       else return null; // une chaîne ne produit pas de films au cinéma
     } else parametres.with_companies = p.societe_id;
   }
+  // « À l'affiche » : sortis depuis N jours (utilisé quand on filtre l'onglet « Films à l'affiche »)
+  const depuis = parseInt(p.depuis_jours, 10);
+  if (film && depuis > 0 && !p.annee_min && !p.annee_max) {
+    parametres[`${champDate}.gte`] = new Date(Date.now() - depuis * 86400000).toISOString().slice(0, 10);
+    parametres[`${champDate}.lte`] = aujourdhui;
+  }
   if (p.annee_min) parametres[`${champDate}.gte`] = `${parseInt(p.annee_min, 10)}-01-01`;
   if (p.annee_max) parametres[`${champDate}.lte`] = `${parseInt(p.annee_max, 10)}-12-31`;
   if (p.tri === "mieux_notes") {
