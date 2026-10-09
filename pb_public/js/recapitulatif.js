@@ -119,15 +119,32 @@ function ouvrirInfoClassifications(actuelle, format) {
   dialogue.showModal();
 }
 
+// "valeur" : du texte, ou une liste de liens [{ texte, href }] (un lien ouvre le catalogue sur tout ce qui partage cette référence)
 function creerTuile(libelle, valeur, details, quandClic) {
+  const estListeDeLiens = Array.isArray(valeur);
   const contenu = [
     el("span", { class: "recap-tuile-libelle" }, libelle, quandClic ? icone("info") : null),
-    el("span", { class: "recap-tuile-valeur" }, valeur),
+    el("span", { class: "recap-tuile-valeur" }, estListeDeLiens
+      ? valeur.flatMap((lien, i) => [i ? ", " : "", el("a", { class: "lien-reference", href: lien.href, title: lien.titre || "Voir tous les titres liés" }, lien.texte)])
+      : valeur),
     details ? el("span", { class: "recap-tuile-details" }, details) : null,
   ];
   // Une tuile cliquable (ex. classification) est un vrai bouton : accessible au clavier
   if (!quandClic) return el("div", { class: "recap-tuile" }, contenu);
   return el("button", { type: "button", class: "recap-tuile recap-tuile-bouton", title: "Cliquer pour comprendre les classifications d'âge", onclick: quandClic }, contenu);
+}
+
+// Genre cliqué : on retrouve sa clé de filtre du catalogue d'après son nom (« Action & Adventure » → Action)
+async function ouvrirGenre(nom, format) {
+  try {
+    const choix = await source("filtres");
+    const normal = (x) => x.toLowerCase().replace(/[^a-zà-ÿ]/g, "");
+    const synonymes = { adventure: "aventure", scifi: "sciencefiction", fantasy: "fantastique", war: "guerre" };
+    const voulus = nom.split(" & ").map((m) => normal(synonymes[normal(m)] || m));
+    const trouve = choix.genres.find((g) => voulus.includes(normal(g.libelle)));
+    if (!trouve) { toast(`« ${nom} » n'a pas de filtre dans le catalogue.`, true); return; }
+    location.href = `catalogue.html?type=${format}&gi=${trouve.cle}`;
+  } catch (erreur) { toast(erreur.message, true); }
 }
 
 // "d" = les détails renvoyés par /api/source/details
@@ -137,15 +154,22 @@ function creerRecapitulatif(d) {
   const pays = nomsDePays(d.pays);
 
   const tuiles = [
-    creerTuile("Année", d.annee ? String(d.annee) : "—"),
+    // Année : tous les films (ou séries) sortis la même année
+    creerTuile("Année", d.annee ? [{ texte: String(d.annee), href: `catalogue.html?type=${d.format}&amin=${d.annee}&amax=${d.annee}`, titre: `Voir ${film ? "les films" : "les séries"} de ${d.annee}` }] : "—"),
     film
       ? creerTuile("Box-office", d.box_office ? formatMontant(d.box_office) : "—")
       : creerTuile("Saisons", saisons ? String(saisons) : "—"),
-    creerTuile("Studio", d.studio || "—"),
+    // Studio (ou chaîne pour une série) : tous leurs titres. Fiche ancienne sans identifiant : simple texte
+    creerTuile(film ? "Studio" : "Chaîne", (d.societes || []).length
+      ? d.societes.map((s) => ({ texte: s.nom, titre: `Voir tous les titres de ${s.nom}`,
+        href: `catalogue.html?type=${s.type === "chaine" ? "serie" : d.format}&soc=${s.id}&snom=${encodeURIComponent(s.nom)}&stype=${s.type}` }))
+      : d.studio || "—"),
     creerTuile("Classification", d.classification ? d.classification.valeur : "—", d.classification ? d.classification.pays === "FR" ? "France" : "États-Unis" : "",
       () => ouvrirInfoClassifications(d.classification, d.format)),
     creerTuile("Score", d.note_source ? `${d.note_source.toFixed(1)}/10` : "—", d.nb_votes ? `${d.nb_votes} votes` : ""),
-    creerTuile("Pays", pays.length ? pays.join(", ") : "—"),
+    creerTuile("Pays", (d.pays || []).length
+      ? d.pays.map((code) => ({ texte: nomPays(code), titre: `Voir les ${film ? "films" : "séries"} de ce pays`, href: `catalogue.html?type=${d.format}&pi=${code}` }))
+      : "—"),
   ];
   tuiles.forEach((t, i) => { if (i === 2 || i === 5) t.classList.add("recap-tuile-texte"); }); // studio et pays : du texte, pas un chiffre
 
@@ -167,7 +191,7 @@ function creerRecapitulatif(d) {
   ].filter((g) => g);
 
   return el("div", { class: "recap" },
-    (d.genres || []).length ? el("div", { class: "recap-genres" }, d.genres.map((g) => el("span", { class: "recap-genre" }, g))) : null,
+    (d.genres || []).length ? el("div", { class: "recap-genres" }, d.genres.map((g) => el("a", { class: "recap-genre lien-reference", href: "#", title: `Voir tout ce qui est « ${g} »`, onclick: (e) => { e.preventDefault(); ouvrirGenre(g, d.format); } }, g))) : null,
     el("div", { class: "recap-tuiles" }, tuiles),
     equipe.length ? el("div", { class: "recap-equipe" }, equipe) : null);
 }
