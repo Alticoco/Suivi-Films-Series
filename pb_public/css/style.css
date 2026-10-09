@@ -95,14 +95,14 @@ a:has(> .icone) { display: inline-flex; align-items: center; gap: 0.4em; }
   margin: 0 auto;
   padding: var(--espace-3) var(--espace-4) 0;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: flex-end;
   gap: var(--espace-3) var(--espace-6);
 }
 .logo { display: inline-flex; align-items: center; gap: var(--espace-2); font-weight: 600; letter-spacing: -0.012em; white-space: nowrap; padding-bottom: var(--espace-3); }
 .logo:hover { text-decoration: none; }
 .logo .icone { width: 1.25em; height: 1.25em; }
-.entete nav { display: flex; flex-wrap: wrap; gap: 0 var(--espace-1); flex: 1 1 22rem; }
+.entete nav { display: flex; flex-wrap: nowrap; gap: 0 var(--espace-1); flex: 1 1 auto; }
 .entete nav a, .nav-bientot {
   padding: var(--espace-2) var(--espace-3) var(--espace-3);
   font-size: var(--taille-ui); font-weight: 500; color: var(--couleur-texte-discret);
@@ -112,7 +112,7 @@ a:has(> .icone) { display: inline-flex; align-items: center; gap: 0.4em; }
 .entete nav a:hover { color: var(--couleur-texte); background: var(--couleur-menthe-douce); text-decoration: none; border-radius: var(--rayon-petit) var(--rayon-petit) 0 0; }
 .entete nav a.nav-actif { color: var(--couleur-texte); border-bottom-color: var(--couleur-menthe); }
 .nav-bientot { opacity: 0.45; cursor: default; }
-.recherche { display: flex; gap: var(--espace-2); flex: 1 1 18rem; max-width: 28rem; padding-bottom: var(--espace-3); }
+.recherche { display: flex; gap: var(--espace-2); flex: 0 1 14rem; padding-bottom: var(--espace-3); }
 .recherche input { flex: 1; min-width: 0; }
 
 .pied { text-align: center; padding: var(--espace-6) var(--espace-4); border-top: 1px solid var(--couleur-separateur); }
@@ -402,8 +402,8 @@ dialog h2 { margin-top: 0; font-size: 1.25rem; }
 
 /* En-tête sur écran moyen ou étroit : logo, recherche, puis onglets défilables sur une ligne */
 .entete nav a, .nav-bientot { white-space: nowrap; }
-@media (max-width: 900px) {
-  .entete-contenu { align-items: center; row-gap: var(--espace-2); }
+@media (max-width: 1180px) {
+  .entete-contenu { flex-wrap: wrap; align-items: center; row-gap: var(--espace-2); }
   .logo { padding-bottom: 0; flex: 1 1 auto; }
   .recherche { order: 2; flex: 1 1 100%; max-width: none; padding-bottom: 0; }
   .entete nav { order: 3; flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
@@ -415,3 +415,25 @@ input[type="file"]::file-selector-button {
   border-radius: var(--rayon-moyen); padding: 5px 12px; margin-right: var(--espace-3);
   font: inherit; font-size: var(--taille-ui); font-weight: 500; cursor: pointer;
 }
+
+/* ---------- Note par étoiles (10 étoiles, demi-étoiles possibles) ---------- */
+.champ-note { display: flex; align-items: center; flex-wrap: wrap; gap: var(--espace-3); }
+.note-etoiles { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--rayon-moyen); cursor: pointer; touch-action: manipulation; }
+.etoile { position: relative; display: inline-block; width: 1.5rem; height: 1.5rem; }
+.etoile > .icone { width: 100%; height: 100%; stroke: var(--couleur-texte-discret); stroke-width: 1.5; }
+.etoile-remplie { position: absolute; top: 0; bottom: 0; left: 0; width: 0; overflow: hidden; }
+.etoile-remplie .icone { width: 1.5rem; height: 1.5rem; fill: var(--couleur-texte); stroke: var(--couleur-texte); stroke-width: 1.5; }
+.note-valeur { font-family: var(--police-mono); font-variant-numeric: tabular-nums; font-size: var(--taille-ui); color: var(--couleur-texte-discret); min-width: 5.5rem; }
+.champ-note.desactive { opacity: 0.35; pointer-events: none; }
+.note-serie .etiquette { font-family: var(--police-mono); font-size: var(--taille-etiquette); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--couleur-texte-discret); }
+
+/* ---------- Série du catalogue : choix des épisodes vus ---------- */
+.liste-episodes-choix { max-height: 16rem; overflow-y: auto; border: 1px solid var(--couleur-trait); border-radius: var(--rayon-moyen); padding: 0 var(--espace-3); margin-bottom: var(--espace-3); }
+.liste-episodes-choix li:first-child { border-top: none; }
+.liste-episodes-choix li { grid-template-columns: 1fr auto; }
+.barre-boutons { display: flex; flex-wrap: wrap; gap: var(--espace-2); margin-bottom: var(--espace-3); }
+.barre-enregistrer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--espace-4); }
+.champ-date { max-width: 16rem; }
+.champ-date .champ-date-input, .champ-date input { width: 100%; }
+.note-infos { display: inline-flex; align-items: center; gap: var(--espace-3); }
+.note-valeur { min-width: 0 !important; }

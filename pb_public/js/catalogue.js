@@ -58,6 +58,144 @@ async function ajouterTitreTmdb(resultat, mode, donnees) {
   return titre;
 }
 
+// ---------- Série : choisir la saison et les épisodes déjà vus ----------
+// Crée la série dans ma bibliothèque avec les épisodes cochés (tous à la même date).
+// "apres" est appelé une fois la série ajoutée.
+function creerFormulaireSerie(resultat, apres) {
+  const formulaire = el("form", { class: "detail-formulaire" });
+  const message = el("p", { class: "erreur-dialogue", hidden: true });
+  const date = el("input", { type: "date", name: "date", value: dateDuJour() });
+  const selectSaison = el("select", { "aria-label": "Saison", disabled: true });
+  const liste = el("ul", { class: "liste-episodes liste-episodes-choix" });
+  const compteur = el("span", { class: "discret" });
+  const boutonSaison = el("button", { type: "button", class: "contour", disabled: true }, "Cocher la saison");
+  const boutonJusqua = el("button", { type: "button", class: "contour", disabled: true }, "Tout cocher jusqu'à cette saison");
+  const boutonEnregistrer = el("button", { type: "button", class: "principal", disabled: true }, icone("check"), "Enregistrer les épisodes cochés");
+  const boutonAVoir = el("button", { type: "button" }, icone("plus"), "Ajouter à voir");
+  const boutonDejaVue = el("button", { type: "button" }, icone("check"), "Je l'ai déjà vue en entier (sans date)");
+  const etatChargement = el("p", { class: "discret" }, "Chargement des saisons…");
+  const zoneEpisodes = el("div", { hidden: true });
+
+  let saisons = [];
+  const choisis = new Set(); // « saison:épisode » cochés
+  const saisonCourante = () => saisons.find((s) => String(s.numero) === selectSaison.value);
+  const diffuses = (saison) => saison.episodes.filter(estDiffuse);
+  const toutCoche = (saison) => diffuses(saison).length > 0 && diffuses(saison).every((e) => choisis.has(cleEpisode(saison.numero, e.numero)));
+
+  function majBoutons() {
+    const saison = saisonCourante();
+    const n = choisis.size;
+    compteur.textContent = `${n} épisode${n > 1 ? "s" : ""} coché${n > 1 ? "s" : ""}`;
+    boutonEnregistrer.disabled = n === 0;
+    boutonEnregistrer.replaceChildren(icone("check"), n ? `Enregistrer ${n} épisode${n > 1 ? "s" : ""} vu${n > 1 ? "s" : ""}` : "Enregistrer les épisodes cochés");
+    if (!saison) return;
+    boutonSaison.disabled = diffuses(saison).length === 0;
+    boutonSaison.textContent = toutCoche(saison) ? "Décocher la saison" : "Cocher la saison";
+    boutonJusqua.disabled = saison.numero === 0 || diffuses(saison).length === 0; // pas pour les épisodes spéciaux
+  }
+
+  function dessinerListe() {
+    const saison = saisonCourante();
+    liste.replaceChildren(...(saison ? saison.episodes : []).map((episode) => {
+      const cle = cleEpisode(saison.numero, episode.numero);
+      const case_ = el("input", { type: "checkbox", checked: choisis.has(cle), disabled: !estDiffuse(episode) });
+      case_.addEventListener("change", () => {
+        if (case_.checked) choisis.add(cle); else choisis.delete(cle);
+        majBoutons();
+      });
+      const info = estDiffuse(episode)
+        ? (episode.date_diffusion ? formatDate(episode.date_diffusion) : "")
+        : (episode.date_diffusion ? `à venir le ${formatDate(episode.date_diffusion)}` : "date inconnue");
+      return el("li", {}, el("label", { title: episode.synopsis || "" }, case_, ` ${episode.numero}. ${episode.nom}`), el("span", { class: "discret" }, info));
+    }));
+    majBoutons();
+  }
+
+  boutonSaison.addEventListener("click", () => {
+    const saison = saisonCourante();
+    const decocher = toutCoche(saison);
+    for (const episode of diffuses(saison)) {
+      const cle = cleEpisode(saison.numero, episode.numero);
+      if (decocher) choisis.delete(cle); else choisis.add(cle);
+    }
+    dessinerListe();
+  });
+  boutonJusqua.addEventListener("click", () => {
+    const limite = saisonCourante().numero;
+    for (const saison of saisons.filter((s) => s.numero > 0 && s.numero <= limite)) {
+      for (const episode of diffuses(saison)) choisis.add(cleEpisode(saison.numero, episode.numero));
+    }
+    dessinerListe();
+  });
+  selectSaison.addEventListener("change", dessinerListe);
+
+  // Chargement des saisons (le serveur les garde en cache ensuite)
+  chargerSaisons(resultat.id_source).then((resultatSaisons) => {
+    // Saisons « normales » d'abord, épisodes spéciaux à la fin
+    saisons = [...resultatSaisons.filter((s) => s.numero > 0), ...resultatSaisons.filter((s) => s.numero === 0)];
+    selectSaison.replaceChildren(...saisons.map((s) => el("option", { value: String(s.numero) },
+      s.numero === 0 ? "Épisodes spéciaux" : `Saison ${s.numero} (${s.episodes.length} épisode${s.episodes.length > 1 ? "s" : ""})`)));
+    selectSaison.disabled = false;
+    etatChargement.hidden = true;
+    zoneEpisodes.hidden = false;
+    dessinerListe();
+  }).catch((erreur) => { etatChargement.className = "ko"; etatChargement.textContent = `Épisodes indisponibles : ${erreur.message}`; });
+
+  // Ce qui est fait au clic : on bloque les boutons pendant le travail, on affiche l'erreur éventuelle
+  const toutBoutons = [boutonAVoir, boutonDejaVue, boutonEnregistrer];
+  const executer = (travail) => async () => {
+    toutBoutons.forEach((b) => { b.disabled = true; });
+    message.hidden = true;
+    try {
+      await travail(new FormData(formulaire));
+      apres();
+    } catch (erreur) {
+      message.textContent = erreur.message;
+      message.hidden = false;
+      toutBoutons.forEach((b) => { b.disabled = false; });
+      majBoutons();
+    }
+  };
+  boutonAVoir.addEventListener("click", executer((fd) => ajouterTitreTmdb(resultat, "a_voir", fd)));
+  boutonDejaVue.addEventListener("click", executer((fd) => ajouterTitreTmdb(resultat, "vu", fd)));
+  boutonEnregistrer.addEventListener("click", executer(async (fd) => {
+    const episodes = [...choisis].map((c) => c.split(":").map(Number));
+    // « Terminé » si tous les épisodes diffusés sont cochés, sinon « en cours »
+    const progression = calculerProgression(saisons, episodes.map(([saison, episode]) => ({ saison, episode })));
+    const titre = await pbCreer("titres", {
+      source: "tmdb", id_source: resultat.id_source, format_source: "serie", type: fd.get("type"),
+      titre: resultat.titre, annee: resultat.annee || 0, statut: progression.complet ? "termine" : "en_cours", vu_avant: false,
+    });
+    try {
+      await enParallele(episodes, ([saison, episode]) => cocherEpisodeSerie(titre.id, saison, episode, fd.get("date")), () => {});
+    } catch (erreur) {
+      await pbSupprimer("titres", titre.id); // tout ou rien : pas de série à moitié enregistrée
+      throw erreur;
+    }
+    bibliotheque.set(cleTitre("serie", resultat.id_source), titre);
+    toast(`« ${resultat.titre} » ajoutée avec ${episodes.length} épisode${episodes.length > 1 ? "s" : ""} vu${episodes.length > 1 ? "s" : ""}.`);
+  }));
+
+  formulaire.append(
+    champsRadio("type", [["serie", "Série"], ["anime", "Animé"]], resultat.anime_probable ? "anime" : "serie", "Type de titre"),
+    el("div", { class: "detail-bloc" }, el("h3", {}, "Pas encore vue ?"), boutonAVoir),
+    el("div", { class: "detail-bloc" },
+      el("h3", {}, "J'ai vu des épisodes"),
+      etatChargement,
+      zoneEpisodes),
+    el("div", { class: "detail-bloc" }, el("h3", {}, "Déjà vue en entier ?"),
+      el("p", { class: "discret" }, "Enregistrée comme « vue avant » : pas de date, pas d'épisodes précis."), boutonDejaVue),
+    message);
+  // Zone des épisodes : saison, boutons rapides, liste, date puis enregistrement
+  zoneEpisodes.append(
+    el("div", { class: "champ" }, el("label", {}, "Saison"), selectSaison),
+    el("div", { class: "barre-boutons" }, boutonSaison, boutonJusqua),
+    liste,
+    el("div", { class: "champ champ-date" }, el("label", {}, "Date du visionnage (pour les épisodes cochés)"), date),
+    el("div", { class: "barre-enregistrer" }, compteur, boutonEnregistrer));
+  return formulaire;
+}
+
 // ---------- Fenêtre de détail d'un titre ----------
 function ouvrirDetail(resultat, apresAjout) {
   const estFilmTmdb = resultat.format === "film";
@@ -92,8 +230,13 @@ function ouvrirDetail(resultat, apresAjout) {
         el("a", { href: `fiche.html?id=${dejaLa.id}`, class: "bouton-lien" }, "Ouvrir ma fiche"));
       return;
     }
-    // Un animé peut être un film ou une série : le choix dépend du format TMDB.
-    const types = [[estFilmTmdb ? "film" : "serie", estFilmTmdb ? "Film" : "Série"], ["anime", "Animé"]];
+    // Série : on peut choisir la saison et cocher les épisodes déjà vus
+    if (!estFilmTmdb) {
+      actions.append(creerFormulaireSerie(resultat, () => { apresAjout(); dessinerActions(); }));
+      return;
+    }
+    // Un animé peut être un film : le choix dépend du format TMDB.
+    const types = [["film", "Film"], ["anime", "Animé"]];
     const formulaire = el("form", { class: "detail-formulaire" });
     const message = el("p", { class: "erreur-dialogue", hidden: true });
     const boutonAVoir = el("button", { type: "button" }, icone("plus"), "Ajouter à voir");
