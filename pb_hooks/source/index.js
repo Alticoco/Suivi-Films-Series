@@ -63,9 +63,13 @@ function avecCache(idSource, typeDonnee, chercher) {
 
 // --- Fonctions neutres -----------------------------------------------------
 
-// Une recherche n'est pas mise en cache : c'est du direct.
-function rechercher(texte) {
-  return fournisseur.rechercher(texte);
+// Une recherche (ou une liste de découverte) n'est pas mise en cache : c'est du direct.
+function rechercher(texte, page) {
+  return fournisseur.rechercher(texte, page);
+}
+
+function decouvrir(categorie, page) {
+  return fournisseur.decouvrir(categorie, page);
 }
 
 // format : "film" ou "serie"
@@ -116,4 +120,4 @@ function nettoyerCache() {
   return anciennes.length;
 }
 
-module.exports = { rechercher, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };
+module.exports = { rechercher, decouvrir, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };

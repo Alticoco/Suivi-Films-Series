@@ -13,8 +13,11 @@
       <h1>Catalogue</h1>
       <button type="button" id="bouton-manuel">+ Ajouter un titre manuellement</button>
     </div>
-    <p id="message" class="discret">Utilise la barre de recherche en haut pour trouver un film ou une série.</p>
+
+    <nav id="categories" class="categories" aria-label="Catégories"></nav>
+    <p id="message" class="discret"></p>
     <div id="resultats" class="grille-titres"></div>
+    <div id="sentinelle" aria-hidden="true"></div>
   </main>
 
   <script src="js/commun.js"></script>

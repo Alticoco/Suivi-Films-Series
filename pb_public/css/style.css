@@ -260,6 +260,55 @@ button.lien { background: none; border: none; padding: 0; color: var(--couleur-a
   .fiche-image { max-width: var(--largeur-affiche-fiche); }
 }
 
+/* ---------- Catalogue : affiches cliquables et fenêtre de détail ---------- */
+.categories { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espace-petit); margin: var(--espace-moyen) 0; }
+.pastille-categorie {
+  padding: 0.3rem 0.8rem; border: 1px solid var(--couleur-bordure); border-radius: 999px;
+  color: var(--couleur-texte-discret); text-decoration: none; font-size: var(--taille-petit);
+}
+.pastille-categorie:hover { border-color: var(--couleur-accent); color: var(--couleur-texte); }
+.pastille-categorie.active { background: var(--couleur-accent); border-color: var(--couleur-accent); color: var(--couleur-sur-accent); font-weight: 600; }
+
+.carte-affiche {
+  display: flex; flex-direction: column; gap: 0.15rem; padding: 0; text-align: left;
+  background: none; border: none; border-radius: var(--rayon); color: inherit; cursor: pointer;
+}
+.carte-affiche:hover .carte-affiche-image, .carte-affiche:focus-visible .carte-affiche-image { border-color: var(--couleur-accent); transform: translateY(-2px); }
+.carte-affiche-image {
+  position: relative; display: block; border: 1px solid var(--couleur-bordure); border-radius: var(--rayon);
+  overflow: hidden; transition: transform 0.15s, border-color 0.15s;
+}
+.carte-affiche-titre { font-size: var(--taille-petit); font-weight: 600; line-height: 1.25; padding-top: 0.25rem; }
+.carte-affiche .discret { font-size: 0.8rem; }
+.pastille {
+  position: absolute; top: 0.4rem; right: 0.4rem; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  background: var(--couleur-succes); color: var(--couleur-sur-accent); font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+#sentinelle { height: 1px; }
+
+dialog.dialogue-detail { width: min(52rem, 96vw); max-height: 92vh; overflow-y: auto; position: relative; }
+.dialogue-detail .fermer {
+  position: absolute; top: var(--espace-petit); right: var(--espace-petit); width: 2.2rem; height: 2.2rem;
+  padding: 0; border-radius: 50%; z-index: 1;
+}
+.detail { display: grid; grid-template-columns: 15rem 1fr; gap: var(--espace-moyen); padding-top: var(--espace-petit); }
+.detail-affiche .affiche { border-radius: var(--rayon); }
+.detail-infos h2 { margin: 0 2.5rem 0 0; }
+.detail-infos p { margin: 0.35rem 0; }
+.note-tmdb { color: var(--couleur-accent); font-weight: 600; }
+.detail-actions { margin-top: var(--espace-moyen); }
+.detail-bloc { border-top: 1px solid var(--couleur-bordure); padding-top: var(--espace-petit); margin-bottom: var(--espace-moyen); }
+.detail-bloc h3 { margin: 0 0 var(--espace-petit); font-size: 1rem; }
+.bouton-lien {
+  display: inline-block; padding: var(--espace-petit) var(--espace-moyen); border-radius: var(--rayon);
+  background: var(--couleur-accent); color: var(--couleur-sur-accent); font-weight: 600; text-decoration: none;
+}
+@media (max-width: 700px) {
+  .detail { grid-template-columns: 1fr; }
+  .detail-affiche { max-width: 12rem; }
+}
+
 /* ---------- Fenêtres (dialog) ---------- */
 dialog {
   background: var(--couleur-fond-carte);

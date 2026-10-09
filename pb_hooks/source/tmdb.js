@@ -88,28 +88,59 @@ function dateSortieFrance(donnees) {
 
 // --- Fonctions neutres exposées -----------------------------------------
 
-// rechercher(texte) → liste de résultats (films + séries)
-function rechercher(texte) {
-  const donnees = appeler("/search/multi", {
-    query: texte, language: "fr-FR", include_adult: "false",
-  });
-  return (donnees.results || [])
-    .filter((r) => r.media_type === "movie" || r.media_type === "tv")
-    .map((r) => {
-      const film = r.media_type === "movie";
-      const date = film ? r.release_date : r.first_air_date;
-      return {
-        source: "tmdb",
-        id_source: String(r.id),
-        format: film ? "film" : "serie",
-        titre: (film ? r.title : r.name) || "",
-        annee: annee(date),
-        synopsis: r.overview || "",
-        affiche: r.poster_path || null,
-        note_source: r.vote_average || null,
-        anime_probable: animeProbable(r),
-      };
-    });
+// Transforme un résultat TMDB (recherche ou découverte) en résultat neutre.
+// "formatImpose" sert aux listes qui ne contiennent que des films ou que des séries.
+function resultatNeutre(r, formatImpose) {
+  const type = formatImpose || (r.media_type === "movie" ? "film" : r.media_type === "tv" ? "serie" : null);
+  if (!type) return null; // personnes, etc. : on ignore
+  const film = type === "film";
+  const date = film ? r.release_date : r.first_air_date;
+  return {
+    source: "tmdb",
+    id_source: String(r.id),
+    format: type,
+    titre: (film ? r.title : r.name) || "",
+    annee: annee(date),
+    synopsis: r.overview || "",
+    affiche: r.poster_path || null,
+    note_source: r.vote_average || null,
+    anime_probable: animeProbable(r),
+  };
+}
+
+// Une « page » de résultats : { page, total_pages, resultats }
+function pageDeResultats(donnees, formatImpose) {
+  return {
+    page: donnees.page || 1,
+    total_pages: Math.min(donnees.total_pages || 1, 500), // TMDB ne donne rien au-delà de 500
+    resultats: (donnees.results || []).map((r) => resultatNeutre(r, formatImpose)).filter((r) => r !== null),
+  };
+}
+
+// rechercher(texte, page) → résultats (films + séries), page par page
+function rechercher(texte, page) {
+  return pageDeResultats(appeler("/search/multi", {
+    query: texte, language: "fr-FR", include_adult: "false", page: page || 1,
+  }));
+}
+
+// Catégories proposées pour « se balader » dans le catalogue
+const CATEGORIES = {
+  tendances: { chemin: "/trending/all/week" },
+  films_a_l_affiche: { chemin: "/movie/now_playing", format: "film", region: "FR" },
+  films_populaires: { chemin: "/movie/popular", format: "film" },
+  series_populaires: { chemin: "/tv/popular", format: "serie" },
+  films_mieux_notes: { chemin: "/movie/top_rated", format: "film" },
+  series_mieux_notees: { chemin: "/tv/top_rated", format: "serie" },
+};
+
+// decouvrir(categorie, page) → une page de titres à parcourir
+function decouvrir(categorie, page) {
+  const choix = CATEGORIES[categorie];
+  if (!choix) throw new Error(`Catégorie inconnue : ${categorie}`);
+  return pageDeResultats(appeler(choix.chemin, {
+    language: "fr-FR", page: page || 1, region: choix.region,
+  }), choix.format);
 }
 
 // details(format, idSource) → infos d'un titre (null s'il n'existe pas)
@@ -191,4 +222,4 @@ function episodes(idSource, saison) {
   }));
 }
 
-module.exports = { rechercher, details, saisons, episodes };
+module.exports = { rechercher, decouvrir, details, saisons, episodes };
