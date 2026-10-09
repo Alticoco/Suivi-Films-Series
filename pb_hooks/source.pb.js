@@ -8,6 +8,7 @@
 //   GET /api/source/saisons/{id}
 //   GET /api/source/episodes/{id}/{saison}
 //   GET /api/source/resumes                    affiches + notes déjà en cache
+//   GET /api/source/cache, DELETE /api/source/cache   taille du cache, vider le cache
 //
 // Note : dans PocketBase, chaque route est isolée (elle ne voit pas les
 // fonctions écrites en haut de ce fichier). On charge donc les modules
@@ -39,6 +40,14 @@ routerAdd("GET", "/api/source/episodes/{id}/{saison}", (e) => {
 // Affiches et notes de tout ce qui est déjà en cache (pour la bibliothèque)
 routerAdd("GET", "/api/source/resumes", (e) => {
   return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.resumes());
+});
+
+// Cache : combien de lignes, et « Vider le cache TMDB » (page Sauvegarde)
+routerAdd("GET", "/api/source/cache", (e) => {
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.infoCache());
+});
+routerAdd("DELETE", "/api/source/cache", (e) => {
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.viderCache());
 });
 
 // Tâche quotidienne (4 h du matin, si le PC est allumé) : vide le cache de plus de 6 mois.

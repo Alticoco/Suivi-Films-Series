@@ -134,7 +134,8 @@ En-tête commun : navigation + barre de recherche. Pied de page : logo et mentio
 ### Export Excel (.xlsx), lisible par un humain
 
 - **Feuille « Historique »** : une ligne par visionnage — Titre, Année, Type, Date (jj/mm/aaaa), Saison, Épisode, Note, Commentaire, Statut actuel du titre.
-- **Feuille « Mes titres »** : une ligne par titre — Titre, Année, Type, Statut, Vu avant, Note série, Notes.
+- **Feuille « Mes titres »** : une ligne par titre — Titre, Année, Type, Statut, Vu avant, Note série, Notes, Durée (min) (colonne ajoutée : nécessaire pour ne pas perdre la durée des titres manuels).
+- Les images ajoutées à la main (`image_perso`) ne sont pas dans l'export.
 - Les titres « vu avant » apparaissent dans l'historique avec « Vu avant » à la place de la date.
 - Une seule colonne technique, **en dernier** : `Identifiant` (ex. `tmdb:serie:1399`, `tmdb:film:603` ou `manuel:xxxx`), indispensable pour l'import.
 - Nom du fichier : `suivi-films-series_AAAA-MM-JJ.xlsx`.

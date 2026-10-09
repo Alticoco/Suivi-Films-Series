@@ -95,6 +95,19 @@ function resumes() {
   return resultat;
 }
 
+// Nombre de lignes actuellement en cache.
+function infoCache() {
+  return { lignes: $app.countRecords("cache_source") };
+}
+
+// Vide tout le cache (bouton de la page Sauvegarde). Il se reconstruit tout seul ensuite.
+// Ne touche JAMAIS à mes données (titres, visionnages).
+function viderCache() {
+  const lignes = $app.findAllRecords("cache_source");
+  lignes.forEach((fiche) => $app.delete(fiche));
+  return { supprimees: lignes.length };
+}
+
 // Supprime tout ce qui a plus de 6 mois. Renvoie le nombre de lignes supprimées.
 function nettoyerCache() {
   const limite = formatDate(new Date(Date.now() - JOURS_AVANT_SUPPRESSION * JOUR_EN_SECONDES * 1000));
@@ -103,4 +116,4 @@ function nettoyerCache() {
   return anciennes.length;
 }
 
-module.exports = { rechercher, details, saisons, episodes, resumes, nettoyerCache };
+module.exports = { rechercher, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };

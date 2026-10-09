@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sauvegarde — Suivi Films &amp; Séries</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page-etroite">
+    <h1>Sauvegarde</h1>
+    <p class="discret">Tes données sont stockées sur ton PC. L'export Excel t'en donne une copie lisible, que tu peux conserver ailleurs (clé USB, cloud...) et réimporter plus tard.</p>
+
+    <section class="carte">
+      <h2>Exporter</h2>
+      <p id="dernier-export" class="discret">…</p>
+      <button type="button" id="bouton-export" class="principal">Exporter maintenant</button>
+      <p class="discret">Le fichier contient tes titres et ton historique de visionnages. Les images que tu as ajoutées toi-même ne sont pas incluses.</p>
+    </section>
+
+    <section class="carte">
+      <h2>Importer</h2>
+      <p class="discret">Choisis un fichier <code>.xlsx</code> exporté par cette appli.</p>
+      <input type="file" id="fichier-import" accept=".xlsx">
+      <div id="zone-import" hidden>
+        <p id="apercu"></p>
+        <ul id="erreurs-import" class="ko"></ul>
+        <div id="choix-import">
+          <fieldset>
+            <legend>Que faire du contenu du fichier ?</legend>
+            <div class="choix choix-colonne">
+              <label><input type="radio" name="mode" value="fusionner" checked> <span><strong>Fusionner</strong> : ajoute ce qui manque, sans créer de doublons et sans rien supprimer.</span></label>
+              <label><input type="radio" name="mode" value="remplacer"> <span><strong>Remplacer tout</strong> : efface ma bibliothèque actuelle et la remplace par le fichier.</span></label>
+            </div>
+          </fieldset>
+          <button type="button" id="bouton-import" class="principal">Importer</button>
+        </div>
+        <p id="progression" class="discret"></p>
+      </div>
+    </section>
+
+    <section class="carte">
+      <h2>Cache TMDB</h2>
+      <p class="discret">Le cache garde les synopsis, durées et listes d'épisodes venant de TMDB. Il se reconstruit tout seul : le vider ne supprime <strong>aucune</strong> de tes données.</p>
+      <p id="info-cache">…</p>
+      <button type="button" id="bouton-cache">Vider le cache TMDB</button>
+    </section>
+  </main>
+
+  <script src="js/commun.js"></script>
+  <script src="js/formulaires.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/import.js"></script>
+  <script src="js/sauvegarde.js"></script>
+</body>
+</html>

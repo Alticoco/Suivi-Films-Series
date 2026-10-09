@@ -11,6 +11,11 @@
   <main>
     <h1>Tableau de bord</h1>
 
+    <div id="rappel-sauvegarde" class="bandeau" hidden>
+      <p id="texte-rappel"></p>
+      <button type="button" id="bouton-rappel" class="principal">Exporter maintenant</button>
+    </div>
+
     <section class="tuiles" aria-label="Mini-statistiques">
       <div class="tuile"><span class="tuile-valeur" id="stat-temps">…</span><span class="discret">temps total passé en visionnage</span></div>
       <div class="tuile"><span class="tuile-valeur" id="stat-annee">…</span><span class="discret" id="stat-annee-libelle">titres vus cette année</span></div>
@@ -43,6 +48,7 @@
 
   <script src="js/commun.js"></script>
   <script src="js/serie.js"></script>
+  <script src="js/export.js"></script>
   <script src="js/accueil.js"></script>
 </body>
 </html>

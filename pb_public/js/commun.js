@@ -178,7 +178,7 @@ const PAGES = [
   { nom: "Ma bibliothèque", url: "bibliotheque.html", dispo: true },
   { nom: "Journal", url: "journal.html", dispo: true },
   { nom: "Statistiques", url: "statistiques.html", dispo: true },
-  { nom: "Sauvegarde", url: "sauvegarde.html", dispo: false },
+  { nom: "Sauvegarde", url: "sauvegarde.html", dispo: true },
 ];
 
 function construireEntete() {

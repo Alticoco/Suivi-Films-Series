@@ -153,9 +153,38 @@ async function afficherEnCours(titres, visionnages, resumes) {
   }
 }
 
+// ---------- Rappel de sauvegarde ----------
+// Bandeau si le dernier export date de plus de 30 jours, ou s'il n'y en a jamais eu
+// (et seulement si j'ai déjà des données à sauvegarder).
+async function afficherRappelSauvegarde() {
+  try {
+    const [date, premiers] = await Promise.all([dateDernierExport(), requete("/api/collections/titres/records?perPage=1")]);
+    if (!premiers.totalItems) return;
+    const jours = joursDepuis(date);
+    if (date && jours <= 30) return;
+    document.getElementById("texte-rappel").textContent = date
+      ? `Ton dernier export date d'il y a ${jours} jours. Pense à sauvegarder tes données.`
+      : "Tu n'as encore jamais exporté tes données. Pense à faire une sauvegarde.";
+    const bouton = document.getElementById("bouton-rappel");
+    bouton.addEventListener("click", async () => {
+      bouton.disabled = true;
+      try {
+        const bilan = await exporterMaintenant();
+        toast(`${bilan.nomFichier} : ${bilan.titres} titre(s), ${bilan.visionnages} visionnage(s) exportés.`);
+        document.getElementById("rappel-sauvegarde").hidden = true;
+      } catch (erreur) {
+        toast(erreur.message, true);
+        bouton.disabled = false;
+      }
+    });
+    document.getElementById("rappel-sauvegarde").hidden = false;
+  } catch (erreur) { /* le rappel est facultatif : on ne gêne pas le reste de la page */ }
+}
+
 // ---------- Démarrage ----------
 async function demarrer() {
   verifierEtat();
+  afficherRappelSauvegarde();
   afficherMiniStats();
   try {
     const [titres, visionnages, resumes] = await Promise.all([

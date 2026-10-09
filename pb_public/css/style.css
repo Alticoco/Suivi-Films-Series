@@ -171,6 +171,18 @@ h2 { font-size: 1.25rem; }
 .barre { background: var(--couleur-fond-carte); border-radius: var(--rayon); height: 0.9rem; overflow: hidden; }
 .barre-remplie { background: var(--couleur-accent); height: 100%; border-radius: var(--rayon); }
 
+/* ---------- Sauvegarde ---------- */
+.page-etroite { max-width: 45rem; }
+.choix-colonne { flex-direction: column; gap: var(--espace-petit); }
+.choix-colonne label { align-items: flex-start; }
+code { background: var(--couleur-fond-champ); border-radius: 4px; padding: 0 0.3rem; }
+.bandeau {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--espace-moyen);
+  background: var(--couleur-fond-carte); border: 1px solid var(--couleur-accent); border-radius: var(--rayon);
+  padding: var(--espace-petit) var(--espace-moyen); margin-bottom: var(--espace-moyen);
+}
+.bandeau p { margin: 0; }
+
 /* ---------- Journal ---------- */
 .mois h2 { margin: var(--espace-grand) 0 var(--espace-petit); text-transform: capitalize; }
 .mois h2 .discret { text-transform: none; font-weight: 400; }
