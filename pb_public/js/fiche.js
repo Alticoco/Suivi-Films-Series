@@ -127,6 +127,8 @@ async function chargerInfosSource() {
     // Saga : un clic ouvre l'autre film dans le catalogue
     const saga = creerSaga(d, (film) => { location.href = `catalogue.html?q=${encodeURIComponent(film.titre)}&ouvrir=film:${film.id_source}`; });
     if (saga) bloc.append(saga);
+    // Titres similaires (recommandations de TMDB pour ce titre) : un clic ouvre le titre dans le catalogue
+    bloc.append(creerSimilaires(d, (autre) => { location.href = `catalogue.html?q=${encodeURIComponent(autre.titre)}&ouvrir=${autre.format}:${autre.id_source}`; }));
     // Image TMDB (sauf si j'ai mis la mienne)
     if (!titre.image_perso && d.affiche) {
       const nouvelle = creerImage(urlAffiche(d.affiche, "w342"));

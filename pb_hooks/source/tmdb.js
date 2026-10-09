@@ -528,6 +528,24 @@ function saga(idCollection) {
   return { id: String(d.id), nom: d.name || "", affiche: d.poster_path || null, films: films.map((f) => resultatNeutre(f, "film")) };
 }
 
+// similaires(format, idSource) → les titres que TMDB recommande « à partir de ce titre » (pas de mes goûts) :
+// d'abord ses recommandations, complétées par les titres similaires s'il y en a peu. 18 au maximum.
+function similaires(format, idSource) {
+  const chemin = `/${endpoint(format)}/${idSource}`;
+  const vus = {};
+  const resultats = [];
+  ["recommendations", "similar"].forEach((liste) => {
+    if (resultats.length >= 6 && liste === "similar") return; // assez de recommandations
+    const d = appeler(`${chemin}/${liste}`, { language: "fr-FR", page: 1 });
+    pageDeResultats(d || {}, format).resultats.forEach((r) => {
+      if (vus[r.id_source] || String(r.id_source) === String(idSource)) return;
+      vus[r.id_source] = true;
+      resultats.push(r);
+    });
+  });
+  return resultats.slice(0, 18);
+}
+
 // sagas(texte) → les sagas (collections de films) dont le nom ressemble au texte (ex. « star wars », « bond »)
 function sagas(texte) {
   const d = appeler("/search/collection", { query: texte, language: "fr-FR", page: 1 });
@@ -573,4 +591,4 @@ function episodes(idSource, saison) {
   }));
 }
 
-module.exports = { rechercher, decouvrir, explorer, filtresDisponibles, codesDe, personnes, filmographie, saga, sagas, SAGAS_CONNUES, details, saisons, episodes };
+module.exports = { rechercher, decouvrir, explorer, filtresDisponibles, codesDe, personnes, filmographie, saga, sagas, SAGAS_CONNUES, similaires, details, saisons, episodes };

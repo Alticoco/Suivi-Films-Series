@@ -126,6 +126,11 @@ function filtrerParPays(page, parametres) {
   return page;
 }
 
+// Titres recommandés à partir d'un titre (gardés en cache comme le reste). format : film | serie
+function similaires(format, idSource) {
+  return avecCache(idSource, `similaires_${format}`, () => fournisseur.similaires(format, idSource));
+}
+
 // Les films d'une saga (gardés en cache comme le reste)
 function saga(idCollection) {
   return avecCache(idCollection, "saga", () => fournisseur.saga(idCollection));
@@ -220,4 +225,4 @@ function nettoyerCache() {
   return anciennes.length;
 }
 
-module.exports = { rechercher, decouvrir, explorer, personnes, saga, sagas, filtres, pays, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };
+module.exports = { rechercher, decouvrir, explorer, personnes, saga, sagas, similaires, filtres, pays, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };
