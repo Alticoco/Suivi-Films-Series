@@ -111,7 +111,7 @@ Choisi au moment de l'ajout. Pré-sélectionné automatiquement si le titre TMDB
 
 ## 7. Écrans
 
-En-tête commun : navigation + barre de recherche. Pied de page : logo et mention TMDB.
+En-tête commun : navigation + barre de recherche (avec suggestions de titres pendant la frappe ; un clic ouvre directement la fiche du titre dans le catalogue). Pied de page : logo et mention TMDB.
 
 1. **Tableau de bord** (accueil)
    - Dernier film vu, dernière série vue.

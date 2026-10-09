@@ -695,4 +695,11 @@ if (!texteRecherche) {
   }).catch(() => { /* sans les choix de filtres, le catalogue marche quand même */ });
 }
 message.textContent = "Chargement…";
-chargerPageSuivante();
+chargerPageSuivante().then(() => {
+  // Venu des suggestions de la barre de recherche (?ouvrir=serie:1399) : on ouvre la fiche de ce titre
+  const demande = (parametres.get("ouvrir") || "").match(/^(film|serie):([0-9]+)$/);
+  if (!demande) return;
+  source(`details/${demande[1]}/${demande[2]}`).then((d) => {
+    ouvrirDetail(d, () => majPastille(d));
+  }).catch(() => { /* titre introuvable : on laisse simplement les résultats */ });
+});
