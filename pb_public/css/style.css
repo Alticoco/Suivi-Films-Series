@@ -54,7 +54,7 @@ h1 { font-size: var(--taille-titre); margin-top: 0; }
   gap: var(--espace-moyen);
 }
 .logo { font-weight: 700; color: var(--couleur-texte); text-decoration: none; white-space: nowrap; }
-.entete nav { display: flex; flex-wrap: wrap; gap: var(--espace-moyen); flex: 1; }
+.entete nav { display: flex; flex-wrap: wrap; gap: 0.25rem var(--espace-moyen); flex: 1 1 22rem; }
 .entete nav a { color: var(--couleur-texte-discret); text-decoration: none; }
 .entete nav a:hover, .entete nav a.nav-actif { color: var(--couleur-accent); }
 .nav-bientot { color: var(--couleur-bordure); cursor: default; }
@@ -131,6 +131,38 @@ button:disabled { opacity: 0.5; cursor: wait; }
 .actions { margin-top: auto; display: flex; flex-direction: column; gap: 0.35rem; }
 .actions button { width: 100%; padding: 0.35rem var(--espace-petit); font-size: var(--taille-petit); }
 .badge-bibliotheque { color: var(--couleur-succes); font-size: var(--taille-petit); }
+
+.lien-fiche { font-size: var(--taille-petit); }
+button.danger {
+  background: var(--couleur-erreur);
+  color: var(--couleur-sur-accent);
+  border-color: var(--couleur-erreur);
+  font-weight: 600;
+}
+
+/* ---------- Fiche titre ---------- */
+.fiche { display: grid; grid-template-columns: var(--largeur-affiche-fiche) 1fr; gap: var(--espace-grand); margin-bottom: var(--espace-grand); }
+.fiche-image .affiche { border-radius: var(--rayon); }
+.fiche-boutons-image { display: flex; flex-direction: column; gap: var(--espace-petit); margin-top: var(--espace-petit); }
+.fiche-infos h1 { margin-bottom: 0; }
+.fiche-infos .champ { max-width: 32rem; }
+.fiche-infos > button.principal { align-self: flex-start; margin-bottom: var(--espace-moyen); }
+.fiche-infos .champ button { align-self: flex-start; margin-top: var(--espace-petit); }
+.synopsis { max-width: 45rem; }
+.liste-visionnages { list-style: none; margin: 0; padding: 0; }
+.liste-visionnages li {
+  display: flex; justify-content: space-between; gap: var(--espace-moyen);
+  padding: var(--espace-petit) 0; border-top: 1px solid var(--couleur-bordure);
+}
+.liste-visionnages p { margin: 0.25rem 0 0; }
+.commentaire { color: var(--couleur-texte-discret); font-style: italic; }
+.actions-ligne { display: flex; gap: var(--espace-petit); align-items: flex-start; }
+.actions-ligne button { padding: 0.25rem var(--espace-petit); font-size: var(--taille-petit); }
+.zone-danger { margin: var(--espace-grand) 0; }
+@media (max-width: 700px) {
+  .fiche { grid-template-columns: 1fr; }
+  .fiche-image { max-width: var(--largeur-affiche-fiche); }
+}
 
 /* ---------- Fenêtres (dialog) ---------- */
 dialog {

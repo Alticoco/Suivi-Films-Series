@@ -69,9 +69,29 @@ function pbCreer(collection, donnees) {
   });
 }
 
+function pbLire(collection, id) {
+  return requete(`/api/collections/${collection}/records/${id}`);
+}
+
+// Modifie un enregistrement. "donnees" = objet simple, ou FormData (pour envoyer un fichier).
+function pbModifier(collection, id, donnees) {
+  const estFormulaire = donnees instanceof FormData;
+  return requete(`/api/collections/${collection}/records/${id}`, {
+    method: "PATCH",
+    headers: estFormulaire ? {} : { "Content-Type": "application/json" },
+    body: estFormulaire ? donnees : JSON.stringify(donnees),
+  });
+}
+
 function pbSupprimer(collection, id) {
   return requete(`/api/collections/${collection}/records/${id}`, { method: "DELETE" });
 }
+
+// ---------- Libellés ----------
+const LIBELLES_TYPE = { film: "Film", serie: "Série", anime: "Animé" };
+const LIBELLES_STATUT = {
+  a_voir: "À voir", en_cours: "En cours", termine: "Terminé", en_pause: "En pause", abandonne: "Abandonné",
+};
 
 // ---------- Images et dates ----------
 // Les affiches sont chargées directement chez TMDB (jamais stockées chez moi).
@@ -84,6 +104,42 @@ function dateDuJour() {
   const d = new Date();
   const deuxChiffres = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${deuxChiffres(d.getMonth() + 1)}-${deuxChiffres(d.getDate())}`;
+}
+
+// "2026-10-09 00:00:00.000Z" (ou "2026-10-09") → "09/10/2026"
+function formatDate(date) {
+  const [annee, mois, jour] = String(date).slice(0, 10).split("-");
+  return `${jour}/${mois}/${annee}`;
+}
+
+// 136 → "2 h 16 min"
+function formatDuree(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (!h) return `${m} min`;
+  return m ? `${h} h ${String(m).padStart(2, "0")} min` : `${h} h`;
+}
+
+// Temps écoulé entre deux dates (AAAA-MM-JJ), en français : "2 ans et 3 mois", "12 jours"...
+function dureeEntre(debut, fin) {
+  const [a1, m1, j1] = debut.slice(0, 10).split("-").map(Number);
+  const [a2, m2, j2] = fin.slice(0, 10).split("-").map(Number);
+  let annees = a2 - a1;
+  let mois = m2 - m1;
+  let jours = j2 - j1;
+  if (jours < 0) {
+    mois--;
+    jours += new Date(Date.UTC(a2, m2 - 1, 0)).getUTCDate(); // nombre de jours du mois précédent
+  }
+  if (mois < 0) {
+    annees--;
+    mois += 12;
+  }
+  const morceaux = [];
+  if (annees) morceaux.push(`${annees} an${annees > 1 ? "s" : ""}`);
+  if (mois) morceaux.push(`${mois} mois`);
+  if (!annees && jours) morceaux.push(`${jours} jour${jours > 1 ? "s" : ""}`);
+  return morceaux.length ? morceaux.join(" et ") : "le même jour";
 }
 
 // ---------- Messages éphémères ----------

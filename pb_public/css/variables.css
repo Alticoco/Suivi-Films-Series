@@ -29,4 +29,5 @@
   --rayon: 10px;
   --largeur-max: 1100px;
   --largeur-carte-titre: 170px; /* largeur d'une affiche dans les grilles */
+  --largeur-affiche-fiche: 260px; /* largeur de l'affiche sur la fiche d'un titre */
 }
