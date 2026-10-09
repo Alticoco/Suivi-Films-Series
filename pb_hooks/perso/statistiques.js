@@ -6,6 +6,9 @@
 //  - un épisode compte sa durée propre, sinon la durée habituelle d'un épisode de la série ;
 //  - un titre « vu avant » (sans date) compte comme « vu », mais pas dans le temps passé
 //    ni dans les années (on ne sait pas quand).
+// Deux jeux de chiffres : « cette_annee » (visionnages datés de l'année en cours) et « total » (toute ma vie :
+// toutes les années + ce qui a été vu avant la création du site, sans date). Pour le total, un titre « vu avant »
+// compte sa durée : un film une fois, une série tous ses épisodes diffusés (hors spéciaux) non cochés un par un.
 // Les titres dont la durée est inconnue (pas encore en cache) sont listés dans "manquants" :
 // la page les demande à la source, puis redemande les statistiques.
 
@@ -43,6 +46,15 @@ function calculer() {
   let minutesEpisodes = 0;
   let titresVusCetteAnnee = 0;
 
+  // Un jeu de chiffres : cette année, ou toute ma vie
+  const nouveauBloc = () => ({ minutes_films: 0, minutes_episodes: 0, minutes_total: 0, films: 0, episodes: 0, titres_vus: { film: 0, serie: 0, anime: 0 } });
+  const cetteAnnee = nouveauBloc();
+  const total = nouveauBloc();
+  function compter(bloc, film, minutes) {
+    if (film) { bloc.films++; bloc.minutes_films += minutes; } else { bloc.episodes++; bloc.minutes_episodes += minutes; }
+    bloc.minutes_total += minutes;
+  }
+
   function annee(a) {
     if (!parAnnee[a]) parAnnee[a] = { annee: Number(a), films: 0, episodes: 0, minutes: 0 };
     return parAnnee[a];
@@ -50,41 +62,55 @@ function calculer() {
 
   titres.forEach((t) => {
     const siens = parTitre[t.id] || [];
-    if (t.getBool("vu_avant") || siens.length > 0) vus[t.getString("type")]++;
-    if (siens.some((v) => v.getString("date").slice(0, 4) === anneeEnCours)) titresVusCetteAnnee++;
-    if (!siens.length) return;
+    const type = t.getString("type");
+    const vuAvant = t.getBool("vu_avant");
+    if (vuAvant || siens.length > 0) { vus[type]++; total.titres_vus[type]++; }
+    if (siens.some((v) => v.getString("date").slice(0, 4) === anneeEnCours && !v.getBool("avant"))) { titresVusCetteAnnee++; cetteAnnee.titres_vus[type]++; }
+    if (!siens.length && !vuAvant) return;
 
     const tmdb = t.getString("source") === "tmdb";
     const idSource = t.getString("id_source");
-    const film = tmdb ? t.getString("format_source") === "film" : t.getString("type") === "film";
+    const film = tmdb ? t.getString("format_source") === "film" : type === "film";
 
     // Durée d'un film, ou durée habituelle d'un épisode
     let duree = 0;
+    let fiche = null;
     if (tmdb) {
-      const fiche = enCache(idSource, film ? "details_film" : "details_serie");
+      fiche = enCache(idSource, film ? "details_film" : "details_serie");
       if (fiche) duree = fiche.duree_min || 0;
       else manquants[`${film ? "film" : "serie"}:${idSource}`] = { format: film ? "film" : "serie", id_source: idSource };
     } else {
       duree = t.getInt("duree_min");
     }
 
+    const episodesVus = {}; // « saison:épisode » déjà comptés (pour ne pas les recompter avec « vu avant »)
     siens.forEach((v) => {
-      if (v.getBool("avant")) return; // « vu avant » : pas de date, donc ni temps passé ni année
-      const a = annee(v.getString("date").slice(0, 4));
+      const avant = v.getBool("avant");
       let minutes = duree;
-      if (film) {
-        a.films++;
-        minutesFilms += minutes;
-      } else {
+      if (!film) {
         // Durée propre à l'épisode si on la connaît
         const saison = tmdb ? enCache(idSource, `saison_${v.getInt("saison")}`) : null;
         const episode = saison && saison.find((e) => e.numero === v.getInt("episode"));
         if (episode && episode.duree_min) minutes = episode.duree_min;
-        a.episodes++;
-        minutesEpisodes += minutes;
+        if (v.getInt("saison") > 0) episodesVus[`${v.getInt("saison")}:${v.getInt("episode")}`] = true;
       }
+      compter(total, film, minutes); // toute ma vie : daté ou non
+      if (avant) return; // « vu avant » : pas de date, donc ni année, ni « cette année »
+      const a = annee(v.getString("date").slice(0, 4));
+      if (film) { a.films++; minutesFilms += minutes; } else { a.episodes++; minutesEpisodes += minutes; }
       a.minutes += minutes;
+      if (v.getString("date").slice(0, 4) === anneeEnCours) compter(cetteAnnee, film, minutes);
     });
+
+    // Titre entier « vu avant » : un film compte une fois ; une série compte les épisodes diffusés non cochés un par un
+    if (vuAvant) {
+      if (film) compter(total, true, duree);
+      else if (fiche) {
+        const diffuses = (fiche.saisons || []).filter((s) => s.numero > 0).reduce((somme, s) => somme + (s.nb_episodes || 0), 0);
+        const restants = Math.max(0, diffuses - Object.keys(episodesVus).length);
+        for (let i = 0; i < restants; i++) compter(total, false, duree);
+      }
+    }
   });
 
   const annees = Object.keys(parAnnee).map((k) => parAnnee[k]).sort((x, y) => x.annee - y.annee);
@@ -95,6 +121,8 @@ function calculer() {
     titres_vus: vus,
     titres_vus_cette_annee: titresVusCetteAnnee,
     annee_en_cours: Number(anneeEnCours),
+    cette_annee: cetteAnnee,
+    total: total,
     par_annee: annees,
     manquants: Object.keys(manquants).map((k) => manquants[k]),
   };

@@ -325,8 +325,8 @@ const REGIONS = [
 function filtresDisponibles() {
   return {
     genres: GENRES.map((g) => ({ cle: g[0], libelle: g[1] })),
-    regions: REGIONS.map((r) => ({ cle: r[0], libelle: r[1] })),
-    pays: PAYS.map((p) => ({ cle: p[0], libelle: p[1] })),
+    regions: REGIONS.map((r) => ({ cle: r[0], libelle: r[1], codes: r[2] })),
+    pays: PAYS.map((p) => ({ cle: p[0], libelle: p[1], codes: p[2] })),
   };
 }
 
