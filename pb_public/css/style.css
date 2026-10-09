@@ -89,7 +89,12 @@ a:has(> .icone) { display: inline-flex; align-items: center; gap: 0.4em; }
 .ligne-etat { display: flex; gap: var(--espace-2); align-items: center; }
 
 /* ---------- En-tête et pied de page ---------- */
-.entete { background: var(--couleur-fond); border-bottom: 1px solid var(--couleur-separateur); }
+.entete {
+  background: var(--couleur-fond); border-bottom: 1px solid var(--couleur-separateur);
+  position: sticky; top: 0; z-index: 40; transition: transform 220ms var(--courbe);
+}
+/* Masqué après un défilement vers le bas ; réapparaît quand la souris touche le bord haut de la fenêtre */
+.entete.entete-cachee { transform: translateY(-101%); }
 .entete-contenu {
   max-width: var(--largeur-max);
   margin: 0 auto;
