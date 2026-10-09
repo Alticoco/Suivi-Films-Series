@@ -62,3 +62,36 @@ function cocherEpisodeSerie(idTitre, saison, episode, date) {
     titre: idTitre, date: `${date || dateDuJour()} 00:00:00.000Z`, saison, episode,
   });
 }
+
+// ---------- Option « cocher aussi tous les épisodes précédents » ----------
+// Pratique pour dire « j'en suis à l'épisode 7 de la saison 3 » : en cochant celui-là,
+// tout ce qui vient avant (épisodes d'avant et saisons précédentes) est coché aussi.
+// Les épisodes spéciaux (saison 0) et ceux pas encore diffusés ne sont jamais cochés ainsi.
+// Le choix est mémorisé dans ce navigateur.
+const CLE_OPTION_PRECEDENTS = "cocherPrecedents";
+function lireOptionPrecedents() {
+  try { return localStorage.getItem(CLE_OPTION_PRECEDENTS) === "1"; } catch (erreur) { return false; }
+}
+let optionPrecedents = lireOptionPrecedents(); // état actuel de la case
+
+// Épisodes diffusés (hors spéciaux) qui précèdent l'épisode donné : [{saison, episode}, ...]
+function episodesAvant(saisons, saison, episode) {
+  const resultat = [];
+  for (const s of saisons) {
+    if (s.numero === 0 || s.numero > saison) continue;
+    for (const e of s.episodes) {
+      if (estDiffuse(e) && (s.numero < saison || e.numero < episode)) resultat.push({ saison: s.numero, episode: e.numero });
+    }
+  }
+  return resultat;
+}
+
+// La case à cocher (à placer dans une barre d'outils)
+function creerOptionPrecedents() {
+  const caseOption = el("input", { type: "checkbox", checked: optionPrecedents });
+  caseOption.addEventListener("change", () => {
+    optionPrecedents = caseOption.checked;
+    try { localStorage.setItem(CLE_OPTION_PRECEDENTS, optionPrecedents ? "1" : "0"); } catch (erreur) { /* pas grave */ }
+  });
+  return el("label", { class: "option-precedents" }, caseOption, "Cocher aussi tous les épisodes précédents");
+}

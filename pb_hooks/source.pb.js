@@ -5,6 +5,8 @@
 //
 //   GET /api/source/rechercher?q=texte&page=1
 //   GET /api/source/decouvrir?categorie=tendances&page=1   (se balader dans le catalogue)
+//   GET /api/source/explorer?type=…&genres_inclus=…&pays_exclus=…  (parcourir avec des filtres)
+//   GET /api/source/filtres, GET /api/source/pays?ids=film:603,…
 //   GET /api/source/details/{format}/{id}      format = film | serie
 //   GET /api/source/saisons/{id}
 //   GET /api/source/episodes/{id}/{saison}
@@ -27,6 +29,31 @@ routerAdd("GET", "/api/source/decouvrir", (e) => {
   const categorie = (e.request.url.query().get("categorie") || "tendances").trim();
   const page = Math.max(1, Math.min(500, parseInt(e.request.url.query().get("page") || "1", 10) || 1));
   return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.decouvrir(categorie, page));
+});
+
+// Les choix de filtres : GET /api/source/filtres
+routerAdd("GET", "/api/source/filtres", (e) => {
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.filtres());
+});
+
+// Parcourir avec filtres : GET /api/source/explorer?type=film&genres_inclus=drame&pays_exclus=asie&page=1
+routerAdd("GET", "/api/source/explorer", (e) => {
+  const q = e.request.url.query();
+  const parametres = {
+    type: q.get("type") || "tous",
+    genres_inclus: q.get("genres_inclus") || "", genres_exclus: q.get("genres_exclus") || "",
+    pays_inclus: q.get("pays_inclus") || "", pays_exclus: q.get("pays_exclus") || "",
+    annee_min: q.get("annee_min") || "", annee_max: q.get("annee_max") || "",
+    tri: q.get("tri") || "populaires",
+    page: Math.max(1, Math.min(500, parseInt(q.get("page") || "1", 10) || 1)),
+  };
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.explorer(parametres));
+});
+
+// Pays de plusieurs titres : GET /api/source/pays?ids=film:603,serie:1399
+routerAdd("GET", "/api/source/pays", (e) => {
+  const ids = (e.request.url.query().get("ids") || "").split(",").filter((x) => x);
+  return require(`${__hooks}/source/reponse.js`).repondre(e, (source) => source.pays(ids));
 });
 
 routerAdd("GET", "/api/source/details/{format}/{id}", (e) => {

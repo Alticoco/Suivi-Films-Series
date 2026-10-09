@@ -43,13 +43,14 @@ function ecrireEnCache(enregistrement, idSource, typeDonnee, donnees) {
 }
 
 // Renvoie la donnée en cache si elle est récente, sinon la récupère via "chercher()".
-function avecCache(idSource, typeDonnee, chercher) {
+// "versionMin" : une donnée enregistrée avec un format plus ancien (version plus petite) est rechargée.
+function avecCache(idSource, typeDonnee, chercher, versionMin) {
   const enCache = chercherEnCache(idSource, typeDonnee);
   if (enCache) {
     const age = Date.now() / 1000 - enCache.getDateTime("recupere_le").unix();
-    if (age < JOURS_AVANT_RAFRAICHISSEMENT * JOUR_EN_SECONDES) {
-      return JSON.parse(enCache.getString("donnees"));
-    }
+    const donnees = JSON.parse(enCache.getString("donnees"));
+    const versionOk = !versionMin || (donnees && donnees.version >= versionMin);
+    if (age < JOURS_AVANT_RAFRAICHISSEMENT * JOUR_EN_SECONDES && versionOk) return donnees;
   }
   try {
     const frais = chercher();
@@ -72,9 +73,55 @@ function decouvrir(categorie, page) {
   return fournisseur.decouvrir(categorie, page);
 }
 
+// Parcourir le catalogue avec des filtres (inclure / exclure des genres, des pays...)
+//
+// Pour les filtres de pays, la source ne sait pas être stricte (elle laisse passer des coproductions) :
+// on vérifie donc les vrais pays de production de chaque titre (fiches gardées en cache, donc de plus
+// en plus rapide). « Inclure » = au moins un des pays choisis ; « exclure » = aucun des pays exclus
+// (une coproduction avec un pays exclu est donc écartée).
+function explorer(parametres) {
+  const page = fournisseur.explorer(parametres);
+  const liste = (v) => (v || "").split(",").map((x) => x.trim()).filter((x) => x);
+  const inclus = liste(parametres.pays_inclus);
+  const exclus = liste(parametres.pays_exclus);
+  if (!inclus.length && !exclus.length) return page;
+
+  const voulus = fournisseur.codesDe(inclus);
+  const interdits = fournisseur.codesDe(exclus);
+  page.resultats = page.resultats.filter((titre) => {
+    let codes = [];
+    try { codes = details(titre.format, titre.id_source).pays || []; } catch (e) { return false; } // impossible de vérifier : on écarte
+    titre.pays = codes;
+    if (inclus.length && !codes.some((c) => voulus[c])) return false;
+    return !codes.some((c) => interdits[c]);
+  });
+  return page;
+}
+
+// Les choix de filtres proposés par la page (genres, pays, régions)
+function filtres() {
+  return fournisseur.filtresDisponibles();
+}
+
+// Pays de plusieurs titres d'un coup (pour étiqueter les affiches d'une liste).
+// "ids" : liste de "film:603" / "serie:1399". Les fiches viennent du cache, sinon de la source ;
+// un titre qui échoue est simplement omis. 24 titres au maximum par appel.
+function pays(ids) {
+  const resultat = {};
+  ids.slice(0, 24).forEach((cle) => {
+    const morceaux = cle.split(":");
+    if ((morceaux[0] !== "film" && morceaux[0] !== "serie") || !/^[0-9]+$/.test(morceaux[1] || "")) return;
+    try {
+      const fiche = details(morceaux[0], morceaux[1]);
+      if (fiche) resultat[cle] = fiche.pays || [];
+    } catch (e) { /* on passe au suivant */ }
+  });
+  return resultat;
+}
+
 // format : "film" ou "serie"
 function details(format, idSource) {
-  return avecCache(idSource, `details_${format}`, () => fournisseur.details(format, idSource));
+  return avecCache(idSource, `details_${format}`, () => fournisseur.details(format, idSource), 2);
 }
 
 function saisons(idSource) {
@@ -120,4 +167,4 @@ function nettoyerCache() {
   return anciennes.length;
 }
 
-module.exports = { rechercher, decouvrir, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };
+module.exports = { rechercher, decouvrir, explorer, filtres, pays, details, saisons, episodes, resumes, infoCache, viderCache, nettoyerCache };

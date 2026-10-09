@@ -54,8 +54,18 @@ async function decocherEpisode(saison, episode) {
 // Coche ou décoche un seul épisode, puis met à jour le statut et l'affichage.
 async function basculerEpisode(saison, episode, coche) {
   try {
-    if (coche) await cocherEpisode(saison, episode);
-    else await decocherEpisode(saison, episode);
+    if (coche) {
+      await cocherEpisode(saison, episode);
+      if (optionPrecedents) {
+        // On coche aussi tout ce qui précède (même date), sauf ce qui est déjà coché
+        const dejaVus = episodesVus();
+        const manquants = episodesAvant(saisonsSerie, saison, episode).filter((x) => !dejaVus.has(cleEpisode(x.saison, x.episode)));
+        await enParallele(manquants, (x) => cocherEpisode(x.saison, x.episode), () => {});
+        if (manquants.length) toast(`${manquants.length} épisode${manquants.length > 1 ? "s" : ""} précédent${manquants.length > 1 ? "s" : ""} coché${manquants.length > 1 ? "s" : ""} aussi.`);
+      }
+    } else {
+      await decocherEpisode(saison, episode);
+    }
     await appliquerStatutAuto(coche);
   } catch (erreur) {
     toast(erreur.message, true);
@@ -173,6 +183,7 @@ function dessinerSerie() {
   const barre = el("div", { class: "barre-serie" },
     el("label", { class: "discret" }, "Date appliquée quand je coche : ",
       el("input", { type: "date", id: "date-cochage", value: (document.getElementById("date-cochage") || {}).value || dateDuJour() })),
+    creerOptionPrecedents(),
     boutonSuivant);
 
   section.replaceChildren(
